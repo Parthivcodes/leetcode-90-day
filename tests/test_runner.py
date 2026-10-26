@@ -3,6 +3,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 import sys
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import runner
@@ -106,6 +107,51 @@ class RunnerTests(unittest.TestCase):
         runner.run_live(self.config,self.plan,self.now+timedelta(days=4),lc,self.ledger)
         self.assertEqual(next(iter(self.ledger.records.values()))['day'],5)
         self.assertEqual(lc.submitted,1)
+
+    def preflight(self, question_changes=None, user_changes=None, history=None):
+        client = runner.LeetCode('test-only-session', 'test-only-csrf')
+        user = {'isSignedIn': True, 'username': 'GandhiSmit06', **(user_changes or {})}
+        question = {'questionId': '206', 'questionFrontendId': '206',
+                    'titleSlug': 'reverse-linked-list', 'difficulty': 'Easy',
+                    'isPaidOnly': False, 'codeSnippets': [{'langSlug': 'cpp'}],
+                    **(question_changes or {})}
+        with patch.object(client,'graphql',side_effect=[{'userStatus':user},{'question':question}]):
+            with patch.object(runner,'request_json',return_value=history if history is not None else {'submissions_dump': []}):
+                return client.preflight('GandhiSmit06',self.plan[0],self.now)
+
+    def test_preflight_rejects_hard(self):
+        with self.assertRaises(runner.Stop):
+            self.preflight({'difficulty':'Hard'})
+
+    def test_preflight_rejects_premium_or_unknown(self):
+        for paid in [True, None]:
+            with self.assertRaises(runner.Stop):
+                self.preflight({'isPaidOnly':paid})
+
+    def test_preflight_rejects_wrong_user_or_expired_session(self):
+        for change in [{'username':'someone-else'},{'isSignedIn':False}]:
+            with self.assertRaises(runner.Stop):
+                self.preflight(user_changes=change)
+
+    def test_preflight_rejects_wrong_problem(self):
+        with self.assertRaises(runner.Stop):
+            self.preflight({'questionFrontendId':'1'})
+
+    def test_preflight_rejects_missing_cpp(self):
+        with self.assertRaises(runner.Stop):
+            self.preflight({'codeSnippets':[]})
+
+    def test_preflight_rejects_unknown_history(self):
+        with self.assertRaises(runner.Stop):
+            self.preflight(history={})
+
+    def test_preflight_detects_any_submission_today(self):
+        _, allowed = self.preflight(history={'submissions_dump':[{'timestamp':str(int(self.now.timestamp()))}]})
+        self.assertFalse(allowed)
+
+    def test_preflight_accepts_verified_free_problem(self):
+        _, allowed = self.preflight()
+        self.assertTrue(allowed)
 
 if __name__ == '__main__':
     unittest.main()
