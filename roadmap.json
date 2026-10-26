@@ -1,0 +1,722 @@
+[
+  {
+    "day": 1,
+    "topic": "Linked Lists",
+    "number": 206,
+    "slug": "reverse-linked-list",
+    "difficulty": "Easy",
+    "solution": "solutions/01-reverse-linked-list.cpp"
+  },
+  {
+    "day": 2,
+    "topic": "Linked Lists",
+    "number": 21,
+    "slug": "merge-two-sorted-lists",
+    "difficulty": "Easy",
+    "solution": "solutions/02-merge-two-sorted-lists.cpp"
+  },
+  {
+    "day": 3,
+    "topic": "Linked Lists",
+    "number": 141,
+    "slug": "linked-list-cycle",
+    "difficulty": "Easy",
+    "solution": "solutions/03-linked-list-cycle.cpp"
+  },
+  {
+    "day": 4,
+    "topic": "Linked Lists",
+    "number": 876,
+    "slug": "middle-of-the-linked-list",
+    "difficulty": "Easy",
+    "solution": "solutions/04-middle-of-the-linked-list.cpp"
+  },
+  {
+    "day": 5,
+    "topic": "Linked Lists",
+    "number": 83,
+    "slug": "remove-duplicates-from-sorted-list",
+    "difficulty": "Easy",
+    "solution": "solutions/05-remove-duplicates-from-sorted-list.cpp"
+  },
+  {
+    "day": 6,
+    "topic": "Linked Lists",
+    "number": 203,
+    "slug": "remove-linked-list-elements",
+    "difficulty": "Easy",
+    "solution": "solutions/06-remove-linked-list-elements.cpp"
+  },
+  {
+    "day": 7,
+    "topic": "Linked Lists",
+    "number": 160,
+    "slug": "intersection-of-two-linked-lists",
+    "difficulty": "Easy",
+    "solution": "solutions/07-intersection-of-two-linked-lists.cpp"
+  },
+  {
+    "day": 8,
+    "topic": "Linked Lists",
+    "number": 234,
+    "slug": "palindrome-linked-list",
+    "difficulty": "Easy",
+    "solution": "solutions/08-palindrome-linked-list.cpp"
+  },
+  {
+    "day": 9,
+    "topic": "Linked Lists",
+    "number": 1290,
+    "slug": "convert-binary-number-in-a-linked-list-to-integer",
+    "difficulty": "Easy",
+    "solution": "solutions/09-convert-binary-number-in-a-linked-list-to-integer.cpp"
+  },
+  {
+    "day": 10,
+    "topic": "Linked Lists",
+    "number": 2,
+    "slug": "add-two-numbers",
+    "difficulty": "Medium",
+    "solution": "solutions/10-add-two-numbers.cpp"
+  },
+  {
+    "day": 11,
+    "topic": "Linked Lists",
+    "number": 19,
+    "slug": "remove-nth-node-from-end-of-list",
+    "difficulty": "Medium",
+    "solution": "solutions/11-remove-nth-node-from-end-of-list.cpp"
+  },
+  {
+    "day": 12,
+    "topic": "Linked Lists",
+    "number": 24,
+    "slug": "swap-nodes-in-pairs",
+    "difficulty": "Medium",
+    "solution": "solutions/12-swap-nodes-in-pairs.cpp"
+  },
+  {
+    "day": 13,
+    "topic": "Linked Lists",
+    "number": 61,
+    "slug": "rotate-list",
+    "difficulty": "Medium",
+    "solution": "solutions/13-rotate-list.cpp"
+  },
+  {
+    "day": 14,
+    "topic": "Linked Lists",
+    "number": 82,
+    "slug": "remove-duplicates-from-sorted-list-ii",
+    "difficulty": "Medium",
+    "solution": "solutions/14-remove-duplicates-from-sorted-list-ii.cpp"
+  },
+  {
+    "day": 15,
+    "topic": "Linked Lists",
+    "number": 86,
+    "slug": "partition-list",
+    "difficulty": "Medium",
+    "solution": "solutions/15-partition-list.cpp"
+  },
+  {
+    "day": 16,
+    "topic": "Linked Lists",
+    "number": 92,
+    "slug": "reverse-linked-list-ii",
+    "difficulty": "Medium",
+    "solution": "solutions/16-reverse-linked-list-ii.cpp"
+  },
+  {
+    "day": 17,
+    "topic": "Linked Lists",
+    "number": 142,
+    "slug": "linked-list-cycle-ii",
+    "difficulty": "Medium",
+    "solution": "solutions/17-linked-list-cycle-ii.cpp"
+  },
+  {
+    "day": 18,
+    "topic": "Linked Lists",
+    "number": 143,
+    "slug": "reorder-list",
+    "difficulty": "Medium",
+    "solution": "solutions/18-reorder-list.cpp"
+  },
+  {
+    "day": 19,
+    "topic": "Linked Lists",
+    "number": 328,
+    "slug": "odd-even-linked-list",
+    "difficulty": "Medium",
+    "solution": "solutions/19-odd-even-linked-list.cpp"
+  },
+  {
+    "day": 20,
+    "topic": "Linked Lists",
+    "number": 2095,
+    "slug": "delete-the-middle-node-of-a-linked-list",
+    "difficulty": "Medium",
+    "solution": "solutions/20-delete-the-middle-node-of-a-linked-list.cpp"
+  },
+  {
+    "day": 21,
+    "topic": "Hashing",
+    "number": 1,
+    "slug": "two-sum",
+    "difficulty": "Easy",
+    "solution": "solutions/21-two-sum.cpp"
+  },
+  {
+    "day": 22,
+    "topic": "Hashing",
+    "number": 217,
+    "slug": "contains-duplicate",
+    "difficulty": "Easy",
+    "solution": "solutions/22-contains-duplicate.cpp"
+  },
+  {
+    "day": 23,
+    "topic": "Hashing",
+    "number": 242,
+    "slug": "valid-anagram",
+    "difficulty": "Easy",
+    "solution": "solutions/23-valid-anagram.cpp"
+  },
+  {
+    "day": 24,
+    "topic": "Hashing",
+    "number": 349,
+    "slug": "intersection-of-two-arrays",
+    "difficulty": "Easy",
+    "solution": "solutions/24-intersection-of-two-arrays.cpp"
+  },
+  {
+    "day": 25,
+    "topic": "Hashing",
+    "number": 350,
+    "slug": "intersection-of-two-arrays-ii",
+    "difficulty": "Easy",
+    "solution": "solutions/25-intersection-of-two-arrays-ii.cpp"
+  },
+  {
+    "day": 26,
+    "topic": "Hashing",
+    "number": 202,
+    "slug": "happy-number",
+    "difficulty": "Easy",
+    "solution": "solutions/26-happy-number.cpp"
+  },
+  {
+    "day": 27,
+    "topic": "Hashing",
+    "number": 205,
+    "slug": "isomorphic-strings",
+    "difficulty": "Easy",
+    "solution": "solutions/27-isomorphic-strings.cpp"
+  },
+  {
+    "day": 28,
+    "topic": "Hashing",
+    "number": 290,
+    "slug": "word-pattern",
+    "difficulty": "Easy",
+    "solution": "solutions/28-word-pattern.cpp"
+  },
+  {
+    "day": 29,
+    "topic": "Hashing",
+    "number": 383,
+    "slug": "ransom-note",
+    "difficulty": "Easy",
+    "solution": "solutions/29-ransom-note.cpp"
+  },
+  {
+    "day": 30,
+    "topic": "Hashing",
+    "number": 387,
+    "slug": "first-unique-character-in-a-string",
+    "difficulty": "Easy",
+    "solution": "solutions/30-first-unique-character-in-a-string.cpp"
+  },
+  {
+    "day": 31,
+    "topic": "Hashing",
+    "number": 219,
+    "slug": "contains-duplicate-ii",
+    "difficulty": "Easy",
+    "solution": "solutions/31-contains-duplicate-ii.cpp"
+  },
+  {
+    "day": 32,
+    "topic": "Hashing",
+    "number": 49,
+    "slug": "group-anagrams",
+    "difficulty": "Medium",
+    "solution": "solutions/32-group-anagrams.cpp"
+  },
+  {
+    "day": 33,
+    "topic": "Hashing",
+    "number": 36,
+    "slug": "valid-sudoku",
+    "difficulty": "Medium",
+    "solution": "solutions/33-valid-sudoku.cpp"
+  },
+  {
+    "day": 34,
+    "topic": "Hashing",
+    "number": 128,
+    "slug": "longest-consecutive-sequence",
+    "difficulty": "Medium",
+    "solution": "solutions/34-longest-consecutive-sequence.cpp"
+  },
+  {
+    "day": 35,
+    "topic": "Hashing",
+    "number": 347,
+    "slug": "top-k-frequent-elements",
+    "difficulty": "Medium",
+    "solution": "solutions/35-top-k-frequent-elements.cpp"
+  },
+  {
+    "day": 36,
+    "topic": "Hashing",
+    "number": 560,
+    "slug": "subarray-sum-equals-k",
+    "difficulty": "Medium",
+    "solution": "solutions/36-subarray-sum-equals-k.cpp"
+  },
+  {
+    "day": 37,
+    "topic": "Hashing",
+    "number": 454,
+    "slug": "4sum-ii",
+    "difficulty": "Medium",
+    "solution": "solutions/37-4sum-ii.cpp"
+  },
+  {
+    "day": 38,
+    "topic": "Hashing",
+    "number": 451,
+    "slug": "sort-characters-by-frequency",
+    "difficulty": "Medium",
+    "solution": "solutions/38-sort-characters-by-frequency.cpp"
+  },
+  {
+    "day": 39,
+    "topic": "Hashing",
+    "number": 3,
+    "slug": "longest-substring-without-repeating-characters",
+    "difficulty": "Medium",
+    "solution": "solutions/39-longest-substring-without-repeating-characters.cpp"
+  },
+  {
+    "day": 40,
+    "topic": "Hashing",
+    "number": 523,
+    "slug": "continuous-subarray-sum",
+    "difficulty": "Medium",
+    "solution": "solutions/40-continuous-subarray-sum.cpp"
+  },
+  {
+    "day": 41,
+    "topic": "Arrays",
+    "number": 26,
+    "slug": "remove-duplicates-from-sorted-array",
+    "difficulty": "Easy",
+    "solution": "solutions/41-remove-duplicates-from-sorted-array.cpp"
+  },
+  {
+    "day": 42,
+    "topic": "Arrays",
+    "number": 27,
+    "slug": "remove-element",
+    "difficulty": "Easy",
+    "solution": "solutions/42-remove-element.cpp"
+  },
+  {
+    "day": 43,
+    "topic": "Arrays",
+    "number": 35,
+    "slug": "search-insert-position",
+    "difficulty": "Easy",
+    "solution": "solutions/43-search-insert-position.cpp"
+  },
+  {
+    "day": 44,
+    "topic": "Arrays",
+    "number": 66,
+    "slug": "plus-one",
+    "difficulty": "Easy",
+    "solution": "solutions/44-plus-one.cpp"
+  },
+  {
+    "day": 45,
+    "topic": "Arrays",
+    "number": 88,
+    "slug": "merge-sorted-array",
+    "difficulty": "Easy",
+    "solution": "solutions/45-merge-sorted-array.cpp"
+  },
+  {
+    "day": 46,
+    "topic": "Arrays",
+    "number": 121,
+    "slug": "best-time-to-buy-and-sell-stock",
+    "difficulty": "Easy",
+    "solution": "solutions/46-best-time-to-buy-and-sell-stock.cpp"
+  },
+  {
+    "day": 47,
+    "topic": "Arrays",
+    "number": 169,
+    "slug": "majority-element",
+    "difficulty": "Easy",
+    "solution": "solutions/47-majority-element.cpp"
+  },
+  {
+    "day": 48,
+    "topic": "Arrays",
+    "number": 283,
+    "slug": "move-zeroes",
+    "difficulty": "Easy",
+    "solution": "solutions/48-move-zeroes.cpp"
+  },
+  {
+    "day": 49,
+    "topic": "Arrays",
+    "number": 977,
+    "slug": "squares-of-a-sorted-array",
+    "difficulty": "Easy",
+    "solution": "solutions/49-squares-of-a-sorted-array.cpp"
+  },
+  {
+    "day": 50,
+    "topic": "Arrays",
+    "number": 485,
+    "slug": "max-consecutive-ones",
+    "difficulty": "Easy",
+    "solution": "solutions/50-max-consecutive-ones.cpp"
+  },
+  {
+    "day": 51,
+    "topic": "Arrays",
+    "number": 53,
+    "slug": "maximum-subarray",
+    "difficulty": "Medium",
+    "solution": "solutions/51-maximum-subarray.cpp"
+  },
+  {
+    "day": 52,
+    "topic": "Arrays",
+    "number": 189,
+    "slug": "rotate-array",
+    "difficulty": "Medium",
+    "solution": "solutions/52-rotate-array.cpp"
+  },
+  {
+    "day": 53,
+    "topic": "Arrays",
+    "number": 238,
+    "slug": "product-of-array-except-self",
+    "difficulty": "Medium",
+    "solution": "solutions/53-product-of-array-except-self.cpp"
+  },
+  {
+    "day": 54,
+    "topic": "Arrays",
+    "number": 11,
+    "slug": "container-with-most-water",
+    "difficulty": "Medium",
+    "solution": "solutions/54-container-with-most-water.cpp"
+  },
+  {
+    "day": 55,
+    "topic": "Arrays",
+    "number": 15,
+    "slug": "3sum",
+    "difficulty": "Medium",
+    "solution": "solutions/55-3sum.cpp"
+  },
+  {
+    "day": 56,
+    "topic": "Arrays",
+    "number": 56,
+    "slug": "merge-intervals",
+    "difficulty": "Medium",
+    "solution": "solutions/56-merge-intervals.cpp"
+  },
+  {
+    "day": 57,
+    "topic": "Arrays",
+    "number": 75,
+    "slug": "sort-colors",
+    "difficulty": "Medium",
+    "solution": "solutions/57-sort-colors.cpp"
+  },
+  {
+    "day": 58,
+    "topic": "Arrays",
+    "number": 73,
+    "slug": "set-matrix-zeroes",
+    "difficulty": "Medium",
+    "solution": "solutions/58-set-matrix-zeroes.cpp"
+  },
+  {
+    "day": 59,
+    "topic": "Arrays",
+    "number": 54,
+    "slug": "spiral-matrix",
+    "difficulty": "Medium",
+    "solution": "solutions/59-spiral-matrix.cpp"
+  },
+  {
+    "day": 60,
+    "topic": "Arrays",
+    "number": 55,
+    "slug": "jump-game",
+    "difficulty": "Medium",
+    "solution": "solutions/60-jump-game.cpp"
+  },
+  {
+    "day": 61,
+    "topic": "Strings",
+    "number": 125,
+    "slug": "valid-palindrome",
+    "difficulty": "Easy",
+    "solution": "solutions/61-valid-palindrome.cpp"
+  },
+  {
+    "day": 62,
+    "topic": "Strings",
+    "number": 344,
+    "slug": "reverse-string",
+    "difficulty": "Easy",
+    "solution": "solutions/62-reverse-string.cpp"
+  },
+  {
+    "day": 63,
+    "topic": "Strings",
+    "number": 14,
+    "slug": "longest-common-prefix",
+    "difficulty": "Easy",
+    "solution": "solutions/63-longest-common-prefix.cpp"
+  },
+  {
+    "day": 64,
+    "topic": "Strings",
+    "number": 58,
+    "slug": "length-of-last-word",
+    "difficulty": "Easy",
+    "solution": "solutions/64-length-of-last-word.cpp"
+  },
+  {
+    "day": 65,
+    "topic": "Strings",
+    "number": 28,
+    "slug": "find-the-index-of-the-first-occurrence-in-a-string",
+    "difficulty": "Easy",
+    "solution": "solutions/65-find-the-index-of-the-first-occurrence-in-a-string.cpp"
+  },
+  {
+    "day": 66,
+    "topic": "Strings",
+    "number": 67,
+    "slug": "add-binary",
+    "difficulty": "Easy",
+    "solution": "solutions/66-add-binary.cpp"
+  },
+  {
+    "day": 67,
+    "topic": "Strings",
+    "number": 392,
+    "slug": "is-subsequence",
+    "difficulty": "Easy",
+    "solution": "solutions/67-is-subsequence.cpp"
+  },
+  {
+    "day": 68,
+    "topic": "Strings",
+    "number": 345,
+    "slug": "reverse-vowels-of-a-string",
+    "difficulty": "Easy",
+    "solution": "solutions/68-reverse-vowels-of-a-string.cpp"
+  },
+  {
+    "day": 69,
+    "topic": "Strings",
+    "number": 680,
+    "slug": "valid-palindrome-ii",
+    "difficulty": "Easy",
+    "solution": "solutions/69-valid-palindrome-ii.cpp"
+  },
+  {
+    "day": 70,
+    "topic": "Strings",
+    "number": 151,
+    "slug": "reverse-words-in-a-string",
+    "difficulty": "Medium",
+    "solution": "solutions/70-reverse-words-in-a-string.cpp"
+  },
+  {
+    "day": 71,
+    "topic": "Strings",
+    "number": 5,
+    "slug": "longest-palindromic-substring",
+    "difficulty": "Medium",
+    "solution": "solutions/71-longest-palindromic-substring.cpp"
+  },
+  {
+    "day": 72,
+    "topic": "Strings",
+    "number": 6,
+    "slug": "zigzag-conversion",
+    "difficulty": "Medium",
+    "solution": "solutions/72-zigzag-conversion.cpp"
+  },
+  {
+    "day": 73,
+    "topic": "Strings",
+    "number": 443,
+    "slug": "string-compression",
+    "difficulty": "Medium",
+    "solution": "solutions/73-string-compression.cpp"
+  },
+  {
+    "day": 74,
+    "topic": "Strings",
+    "number": 647,
+    "slug": "palindromic-substrings",
+    "difficulty": "Medium",
+    "solution": "solutions/74-palindromic-substrings.cpp"
+  },
+  {
+    "day": 75,
+    "topic": "Strings",
+    "number": 567,
+    "slug": "permutation-in-string",
+    "difficulty": "Medium",
+    "solution": "solutions/75-permutation-in-string.cpp"
+  },
+  {
+    "day": 76,
+    "topic": "Stacks and Queues",
+    "number": 20,
+    "slug": "valid-parentheses",
+    "difficulty": "Easy",
+    "solution": "solutions/76-valid-parentheses.cpp"
+  },
+  {
+    "day": 77,
+    "topic": "Stacks and Queues",
+    "number": 232,
+    "slug": "implement-queue-using-stacks",
+    "difficulty": "Easy",
+    "solution": "solutions/77-implement-queue-using-stacks.cpp"
+  },
+  {
+    "day": 78,
+    "topic": "Stacks and Queues",
+    "number": 225,
+    "slug": "implement-stack-using-queues",
+    "difficulty": "Easy",
+    "solution": "solutions/78-implement-stack-using-queues.cpp"
+  },
+  {
+    "day": 79,
+    "topic": "Stacks and Queues",
+    "number": 496,
+    "slug": "next-greater-element-i",
+    "difficulty": "Easy",
+    "solution": "solutions/79-next-greater-element-i.cpp"
+  },
+  {
+    "day": 80,
+    "topic": "Stacks and Queues",
+    "number": 682,
+    "slug": "baseball-game",
+    "difficulty": "Easy",
+    "solution": "solutions/80-baseball-game.cpp"
+  },
+  {
+    "day": 81,
+    "topic": "Stacks and Queues",
+    "number": 1047,
+    "slug": "remove-all-adjacent-duplicates-in-string",
+    "difficulty": "Easy",
+    "solution": "solutions/81-remove-all-adjacent-duplicates-in-string.cpp"
+  },
+  {
+    "day": 82,
+    "topic": "Stacks and Queues",
+    "number": 933,
+    "slug": "number-of-recent-calls",
+    "difficulty": "Easy",
+    "solution": "solutions/82-number-of-recent-calls.cpp"
+  },
+  {
+    "day": 83,
+    "topic": "Stacks and Queues",
+    "number": 155,
+    "slug": "min-stack",
+    "difficulty": "Medium",
+    "solution": "solutions/83-min-stack.cpp"
+  },
+  {
+    "day": 84,
+    "topic": "Stacks and Queues",
+    "number": 150,
+    "slug": "evaluate-reverse-polish-notation",
+    "difficulty": "Medium",
+    "solution": "solutions/84-evaluate-reverse-polish-notation.cpp"
+  },
+  {
+    "day": 85,
+    "topic": "Stacks and Queues",
+    "number": 739,
+    "slug": "daily-temperatures",
+    "difficulty": "Medium",
+    "solution": "solutions/85-daily-temperatures.cpp"
+  },
+  {
+    "day": 86,
+    "topic": "Stacks and Queues",
+    "number": 503,
+    "slug": "next-greater-element-ii",
+    "difficulty": "Medium",
+    "solution": "solutions/86-next-greater-element-ii.cpp"
+  },
+  {
+    "day": 87,
+    "topic": "Stacks and Queues",
+    "number": 735,
+    "slug": "asteroid-collision",
+    "difficulty": "Medium",
+    "solution": "solutions/87-asteroid-collision.cpp"
+  },
+  {
+    "day": 88,
+    "topic": "Stacks and Queues",
+    "number": 394,
+    "slug": "decode-string",
+    "difficulty": "Medium",
+    "solution": "solutions/88-decode-string.cpp"
+  },
+  {
+    "day": 89,
+    "topic": "Stacks and Queues",
+    "number": 946,
+    "slug": "validate-stack-sequences",
+    "difficulty": "Medium",
+    "solution": "solutions/89-validate-stack-sequences.cpp"
+  },
+  {
+    "day": 90,
+    "topic": "Stacks and Queues",
+    "number": 1249,
+    "slug": "minimum-remove-to-make-valid-parentheses",
+    "difficulty": "Medium",
+    "solution": "solutions/90-minimum-remove-to-make-valid-parentheses.cpp"
+  }
+]

@@ -1,0 +1,45 @@
+name: Daily C++ practice
+on:
+  schedule:
+    - cron: '5 15 * * *' # 20:35 IST
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview, authenticated check, or today's single submission
+        type: choice
+        options: [preview, preflight, live]
+        default: preview
+      day:
+        description: Day to preview or check (live always uses today's calendar slot)
+        type: number
+        default: 1
+permissions:
+  contents: write
+concurrency:
+  group: leetcode-daily-submission
+  cancel-in-progress: false
+jobs:
+  daily:
+    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_SUBMISSIONS == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Run local checks
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 tests/check_cpp.py
+      - name: Daily operation
+        env:
+          MODE: ${{ github.event_name == 'schedule' && 'live' || inputs.mode }}
+          DAY: ${{ inputs.day || 1 }}
+          START_DATE: ${{ vars.START_DATE }}
+          ENABLE_SUBMISSIONS: ${{ vars.ENABLE_SUBMISSIONS }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
+          LEETCODE_CSRF_TOKEN: ${{ secrets.LEETCODE_CSRF_TOKEN }}
+        run: python3 runner.py --mode "$MODE" --day "$DAY"
