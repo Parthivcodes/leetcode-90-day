@@ -31,8 +31,12 @@ def request_json(url, headers, payload=None, method=None, allow_missing=False):
     except HTTPError as exc:
         if allow_missing and exc.code == 404:
             return None
-        # Never print response bodies, headers, cookies, or signed URLs.
-        raise Stop(f'Remote request failed with HTTP {exc.code}; no submission retry.') from None
+        # Report only allowlisted diagnostics, never bodies, cookies, or signed URLs.
+        from urllib.parse import urlsplit
+        endpoint = urlsplit(url).hostname + urlsplit(url).path
+        challenge = exc.headers.get('cf-mitigated') == 'challenge'
+        detail = ' Cloudflare challenge detected.' if challenge else ''
+        raise Stop(f'Request to {endpoint} failed with HTTP {exc.code}.{detail} No submission retry.') from None
     except Exception:
         raise Stop('Remote response unavailable or invalid; no submission retry.') from None
 
@@ -205,6 +209,25 @@ def run_live(config, plan, now, lc, ledger):
             raise
         raise Stop('Attempt stopped after reservation; inspect the saved record. No retry.') from None
 
+def diagnose_session(session, now):
+    # Decode expiry only; this is not signature verification or proof of validity.
+    try:
+        encoded = session.split('.')[1]
+        claims = json.loads(base64.urlsafe_b64decode(encoded + '=' * (-len(encoded) % 4)))
+        expiry = datetime.fromtimestamp(int(claims['exp']), timezone.utc)
+    except (IndexError, KeyError, ValueError, TypeError, AttributeError):
+        print('Saved session expiry is not readable; authenticated check is required.')
+        return
+    print(f'Saved session declared expiry: {expiry.isoformat()}; expired: {now >= expiry}. Signature not verified.')
+
+def diagnose_public_access():
+    headers = {'User-Agent': 'leetcode-90-day/1.0', 'Origin': 'https://leetcode.com', 'Referer': 'https://leetcode.com/'}
+    try:
+        result = request_json('https://leetcode.com/graphql/', headers, {'query': '{ userStatus { isSignedIn } }'})
+        print(f'Anonymous GraphQL reachable: {isinstance(result.get("data"), dict)}')
+    except Stop as exc:
+        print(f'Anonymous connectivity check: {exc}')
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['preview', 'preflight', 'live', 'audit'], default='preview')
@@ -222,6 +245,8 @@ def main():
     now = datetime.now(timezone.utc)
     if args.mode == 'preflight':
         lc = LeetCode(os.environ.get('LEETCODE_SESSION'), os.environ.get('LEETCODE_CSRF_TOKEN'))
+        diagnose_session(os.environ.get('LEETCODE_SESSION'), now)
+        diagnose_public_access()
         _, allowed = lc.preflight(config['username'], plan[args.day-1], now)
         print(f'Authentication and problem checks passed. Daily slot available: {allowed}. Nothing submitted.')
         return
