@@ -1,3 +1,5 @@
+import base64
+import json
 import copy
 import unittest
 from datetime import datetime, timezone
@@ -13,7 +15,8 @@ class FakeLedger:
         self.records = {}
         self.fail = False
     def read(self, key):
-        return self.records.get(key)
+        record = self.records.get(key)
+        return None if record is None else {'content': base64.b64encode(json.dumps(record).encode()).decode()}
     def write(self, key, record, previous=None):
         if self.fail:
             raise runner.Stop('Write failed')
@@ -59,7 +62,7 @@ class RunnerTests(unittest.TestCase):
             runner.select_problem(self.plan, None, self.now)
 
     def test_window_boundaries(self):
-        for hour, minute, expected in [(15,4,False),(15,5,True),(17,29,True),(17,30,False),(19,0,False)]:
+        for hour, minute, expected in [(3,4,False),(3,5,True),(17,29,True),(18,29,True),(18,30,False)]:
             self.assertEqual(runner.in_window(self.now.replace(hour=hour,minute=minute)), expected)
 
     def test_second_run_never_resubmits(self):
@@ -72,7 +75,8 @@ class RunnerTests(unittest.TestCase):
         lc = FakeLC(crash=True)
         with self.assertRaises(runner.Stop):
             runner.run_live(self.config,self.plan,self.now,lc,self.ledger)
-        runner.run_live(self.config,self.plan,self.now,lc,self.ledger)
+        with self.assertRaises(runner.Stop):
+            runner.run_live(self.config,self.plan,self.now,lc,self.ledger)
         self.assertEqual(lc.submitted,1)
         self.assertEqual(next(iter(self.ledger.records.values()))['status'],'reserved')
 
@@ -93,7 +97,8 @@ class RunnerTests(unittest.TestCase):
         lc = FakeLC(accepted=False)
         with self.assertRaises(runner.Stop):
             runner.run_live(self.config,self.plan,self.now,lc,self.ledger)
-        runner.run_live(self.config,self.plan,self.now,lc,self.ledger)
+        with self.assertRaises(runner.Stop):
+            runner.run_live(self.config,self.plan,self.now,lc,self.ledger)
         self.assertEqual(lc.submitted,1)
 
     def test_expired_plan_does_not_submit(self):
@@ -107,6 +112,45 @@ class RunnerTests(unittest.TestCase):
         runner.run_live(self.config,self.plan,self.now+timedelta(days=4),lc,self.ledger)
         self.assertEqual(next(iter(self.ledger.records.values()))['day'],5)
         self.assertEqual(lc.submitted,1)
+
+    def test_late_run_without_record_fails_without_submission(self):
+        lc = FakeLC()
+        with self.assertRaises(runner.Stop):
+            runner.run_live(self.config, self.plan, self.now.replace(hour=1), lc, self.ledger)
+        self.assertEqual(lc.submitted, 0)
+
+    def test_all_backup_runs_submit_only_once(self):
+        lc = FakeLC()
+        for hour in (3, 7, 13, 16, 18):
+            runner.run_live(self.config, self.plan, self.now.replace(hour=hour, minute=5), lc, self.ledger)
+        self.assertEqual(lc.submitted, 1)
+
+    def test_audit_missing_day_fails_and_never_creates_record(self):
+        from datetime import timedelta
+        with self.assertRaises(runner.Stop):
+            runner.audit_previous_day(self.config, self.plan, self.now + timedelta(days=1), self.ledger)
+        self.assertEqual(self.ledger.records, {})
+
+    def test_audit_accepted_day_passes(self):
+        from datetime import timedelta
+        lc = FakeLC()
+        runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
+        runner.audit_previous_day(self.config, self.plan, self.now + timedelta(days=1), self.ledger)
+        self.assertEqual(lc.submitted, 1)
+
+    def test_audit_reserved_day_fails(self):
+        from datetime import timedelta
+        self.ledger.write('2026-10-27.json', {'date': '2026-10-27', 'status': 'reserved'})
+        with self.assertRaises(runner.Stop):
+            runner.audit_previous_day(self.config, self.plan, self.now + timedelta(days=1), self.ledger)
+
+    def test_backup_recovers_preflight_failure(self):
+        lc = FakeLC()
+        with patch.object(lc, 'preflight', side_effect=runner.Stop('Temporary outage')):
+            with self.assertRaises(runner.Stop):
+                runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
+        runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
+        self.assertEqual(lc.submitted, 1)
 
     def preflight(self, question_changes=None, user_changes=None, history=None):
         client = runner.LeetCode('test-only-session', 'test-only-csrf')
