@@ -1,13 +1,17 @@
 name: Daily C++ practice
 on:
   schedule:
-    - cron: '5 15 * * *' # 20:35 IST
+    - cron: '5 3 * * *' # 08:35 IST primary
+    - cron: '5 7 * * *' # 12:35 IST backup
+    - cron: '5 13 * * *' # 18:35 IST backup
+    - cron: '5 16 * * *' # 21:35 IST backup
+    - cron: '5 1 * * *' # 06:35 IST audit of yesterday (never submits)
   workflow_dispatch:
     inputs:
       mode:
         description: Preview, authenticated check, or today's single submission
         type: choice
-        options: [preview, preflight, live]
+        options: [preview, preflight, live, audit]
         default: preview
       day:
         description: Day to preview or check (live always uses today's calendar slot)
@@ -20,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   daily:
-    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_SUBMISSIONS == 'true'
+    if: github.event.repository.visibility == 'public' && (github.event_name == 'workflow_dispatch' || vars.ENABLE_SUBMISSIONS == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -34,7 +38,7 @@ jobs:
           python3 tests/check_cpp.py
       - name: Daily operation
         env:
-          MODE: ${{ github.event_name == 'schedule' && 'live' || inputs.mode }}
+          MODE: ${{ github.event_name == 'schedule' && (github.event.schedule == '5 1 * * *' && 'audit' || 'live') || inputs.mode }}
           DAY: ${{ inputs.day || 1 }}
           START_DATE: ${{ vars.START_DATE }}
           ENABLE_SUBMISSIONS: ${{ vars.ENABLE_SUBMISSIONS }}
@@ -43,3 +47,11 @@ jobs:
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
           LEETCODE_CSRF_TOKEN: ${{ secrets.LEETCODE_CSRF_TOKEN }}
         run: python3 runner.py --mode "$MODE" --day "$DAY"
+      - name: Failure alert and recovery instructions
+        if: failure()
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          echo "::error::Daily LeetCode operation failed or was not confirmed. Inspect the Daily operation step. Never delete the daily record or retry an uncertain submission."
+          echo "## LeetCode daily failure" >> "$GITHUB_STEP_SUMMARY"
+          echo "Inspect $RUN_URL. Refresh expired secrets if needed. Backup runs can retry checks before reservation, but never repeat a reserved submission." >> "$GITHUB_STEP_SUMMARY"
