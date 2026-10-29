@@ -65,7 +65,7 @@ def select_problem(plan, start, now):
 def in_window(now):
     local = now.astimezone(IST)
     # A delayed run cannot spill into the next day or consume tomorrow's slot.
-    return (20, 35) <= (local.hour, local.minute) < (23, 0)
+    return (8, 35) <= (local.hour, local.minute)
 
 class Ledger:
     def __init__(self, repo, branch, token):
@@ -141,18 +141,43 @@ class LeetCode:
             time.sleep(3)
         return {'status_code': None, 'status_msg': 'Pending; inspect LeetCode manually'}
 
+
+def require_completed(saved, key):
+    try:
+        record = json.loads(base64.b64decode(saved['content']).decode())
+    except (KeyError, ValueError, TypeError):
+        raise Stop(f'Unreadable daily record {key}; no retry.') from None
+    if record.get('date') != key[:-5] or record.get('status') not in ('accepted', 'skipped-existing-submission'):
+        raise Stop(f'Unconfirmed daily record {key}; inspect Actions and LeetCode. No retry.')
+    return record
+
+def audit_previous_day(config, plan, now, ledger):
+    # Audit a completed IST date only; this operation never submits.
+    yesterday = now.astimezone(IST).date() - timedelta(days=1)
+    probe = datetime.combine(yesterday, datetime.min.time(), tzinfo=IST)
+    if select_problem(plan, config['start_date'], probe) is None:
+        print('Previous day outside the plan; no audit needed.')
+        return
+    key = yesterday.isoformat() + '.json'
+    saved = ledger.read(key)
+    if saved is None:
+        raise Stop(f'Missed daily submission for {yesterday}; no record exists. No catch-up submission.')
+    require_completed(saved, key)
+    print(f'Daily audit passed for {yesterday}.')
+
 def run_live(config, plan, now, lc, ledger):
     problem = select_problem(plan, config['start_date'], now)
     if problem is None:
         print('Outside the 90-day period; no submission.')
         return
-    if not in_window(now):
-        print('Outside the 20:35–23:00 IST window; no submission.')
-        return
     key = now.astimezone(IST).date().isoformat() + '.json'
-    if ledger.read(key) is not None:
-        print('Today already has a durable record; no submission.')
+    existing = ledger.read(key)
+    if existing is not None:
+        require_completed(existing, key)
+        print('Today already completed; no submission.')
         return
+    if not in_window(now):
+        raise Stop('Missed submission window (08:35 to midnight IST); no submission.')
     question, allowed = lc.preflight(config['username'], problem, now)
     record = {'date': key[:-5], 'day': problem['day'], 'slug': problem['slug'],
               'at': now.isoformat(), 'status': 'reserved' if allowed else 'skipped-existing-submission'}
@@ -182,7 +207,7 @@ def run_live(config, plan, now, lc, ledger):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', choices=['preview', 'preflight', 'live'], default='preview')
+    parser.add_argument('--mode', choices=['preview', 'preflight', 'live', 'audit'], default='preview')
     parser.add_argument('--day', type=int, default=1)
     args = parser.parse_args()
     config = json.loads((ROOT / 'config.json').read_text())
@@ -194,15 +219,19 @@ def main():
         p = plan[args.day-1]
         print(json.dumps({'username': config['username'], **p, 'submitted': False}, indent=2))
         return
-    lc = LeetCode(os.environ.get('LEETCODE_SESSION'), os.environ.get('LEETCODE_CSRF_TOKEN'))
     now = datetime.now(timezone.utc)
     if args.mode == 'preflight':
+        lc = LeetCode(os.environ.get('LEETCODE_SESSION'), os.environ.get('LEETCODE_CSRF_TOKEN'))
         _, allowed = lc.preflight(config['username'], plan[args.day-1], now)
         print(f'Authentication and problem checks passed. Daily slot available: {allowed}. Nothing submitted.')
         return
     if os.environ.get('ENABLE_SUBMISSIONS') != 'true':
         raise Stop('Live submissions are disabled.')
     ledger = Ledger(os.environ.get('GITHUB_REPOSITORY'), os.environ.get('DEFAULT_BRANCH'), os.environ.get('GITHUB_TOKEN'))
+    if args.mode == 'audit':
+        audit_previous_day(config, plan, now, ledger)
+        return
+    lc = LeetCode(os.environ.get('LEETCODE_SESSION'), os.environ.get('LEETCODE_CSRF_TOKEN'))
     run_live(config, plan, now, lc, ledger)
 
 if __name__ == '__main__':
