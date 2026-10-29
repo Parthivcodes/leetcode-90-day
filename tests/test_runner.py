@@ -159,9 +159,10 @@ class RunnerTests(unittest.TestCase):
                     'titleSlug': 'reverse-linked-list', 'difficulty': 'Easy',
                     'isPaidOnly': False, 'codeSnippets': [{'langSlug': 'cpp'}],
                     **(question_changes or {})}
-        with patch.object(client,'graphql',side_effect=[{'userStatus':user},{'question':question}]):
-            with patch.object(runner,'request_json',return_value=history if history is not None else {'submissions_dump': []}):
-                return client.preflight('GandhiSmit06',self.plan[0],self.now)
+        result = history if history is not None else {'submissions_dump': []}
+        converted = {'submissions': result['submissions_dump'], 'hasNext': result.get('has_next', False)} if 'submissions_dump' in result else result
+        with patch.object(client,'graphql',side_effect=[{'userStatus':user},{'question':question},{'submissionList':converted}]):
+            return client.preflight('GandhiSmit06',self.plan[0],self.now)
 
     def test_preflight_rejects_hard(self):
         with self.assertRaises(runner.Stop):
