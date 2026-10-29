@@ -115,9 +115,11 @@ class LeetCode:
             raise Stop('Hard, premium, or unverified problem: submission blocked.')
         if not any(x.get('langSlug') == 'cpp' for x in question.get('codeSnippets', [])):
             raise Stop('C++ is not available for this problem.')
-        history = request_json('https://leetcode.com/api/submissions/?offset=0&limit=20', self.headers)
-        submissions = history.get('submissions_dump')
-        if not isinstance(submissions, list) or (not submissions and history.get('has_next')):
+        history = self.graphql('query { submissionList(offset:0,limit:20) { hasNext submissions { id timestamp statusDisplay } } }').get('submissionList')
+        if not isinstance(history, dict):
+            raise Stop('Submission history could not be verified.')
+        submissions = history.get('submissions')
+        if not isinstance(submissions, list) or (not submissions and history.get('hasNext')):
             raise Stop('Submission history could not be verified.')
         for submission in submissions:
             try:
