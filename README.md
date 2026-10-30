@@ -22,12 +22,12 @@ Prepared for **GandhiSmit06**. [Open the 90-day roadmap](ROADMAP.md).
 4. Run **Daily C++ practice → Run workflow → preview**, then **preflight**. Preview is offline. Preflight verifies authentication, identity, current problem metadata, and submission history without submitting.
 5. Only after preflight succeeds, set repository variable `ENABLE_SUBMISSIONS` to `true`. Remove it or set it to `false` to pause. Default-branch workflow write access must be allowed for the daily ledger. The workflow requests only repository contents access.
 
-The primary daily run is **08:35 IST**, with backups at **12:35, 18:35, and 21:35 IST**. Live runs may operate from 08:35 until midnight IST. A read-only audit at **06:35 IST** checks the previous calendar day and fails if its record is missing or unconfirmed. Manual `live` runs use the current calendar day, never the preview day field. Stop after 90 calendar days is enforced in the runner; the scheduled workflow may still start and exit without submitting. Disable the workflow after completion to stop these no-op runs.
+The primary daily run is **08:35 IST**, with backups at **12:35, 18:35, and 21:35 IST**. Live runs may operate from 08:35 IST until the end of the current UTC day (05:30 IST the next morning). A read-only audit at **06:35 IST** checks the previous UTC calendar day and fails if its record is missing or unconfirmed. Manual `live` runs use the current calendar day, never the preview day field. Stop after 90 calendar days is enforced in the runner; the scheduled workflow may still start and exit without submitting. Disable the workflow after completion to stop these no-op runs.
 
 ## Submission limit and failure behavior
 
-- At most one bot submission attempt per IST date. An existing LeetCode submission in either the current IST or UTC date causes that day's scheduled problem to be skipped.
-- The runner reserves the day's slot in `state/YYYY-MM-DD.json` **before** contacting the submission endpoint. The GitHub file creation is atomic. Concurrency is also serialized by the workflow.
+- At most one bot submission attempt per LeetCode UTC date. Only an existing submission in the current UTC date covers that day. A submission before 05:30 IST belongs to the previous LeetCode day.
+- The runner reserves the day's slot in `state/YYYY-MM-DD.json (UTC date)` **before** contacting the submission endpoint. The GitHub file creation is atomic. Concurrency is also serialized by the workflow.
 - Backup runs retry authentication/metadata checks only before a reservation exists. Accepted or manually covered days exit successfully; reserved, pending, and rejected attempts fail visibly without resubmitting.
 - Out-of-window runs without a completed record fail instead of silently succeeding. The morning audit catches a day when no submission run started. Both use GitHub Actions failure emails; enable Email and Only notify for failed workflows in your GitHub notification settings. If GitHub never starts any job including the audit, GitHub alone cannot alert about its own total outage.
 - If a request times out, the reservation stays. A rerun cannot submit again. This intentionally favors avoiding duplicates over guaranteeing daily success.
@@ -57,3 +57,5 @@ python3 runner.py --mode preview --day 1
 The C++ check compiles all 90 solution classes and runs sample/edge assertions for each. These tests are not equivalent to LeetCode's full hidden tests. An authenticated preflight and an actual accepted submission must be observed before declaring live automation verified.
 
 References: [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions), [scheduled workflow limitations](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+
+The UTC calendar fix safely rechecks old IST skip records against authenticated UTC submission history. It never clears or retries an existing accepted, reserved, submitted, or rejected bot attempt. An explicitly dispatched manual live run may run earlier than 08:35 IST but still uses the current UTC date and the same daily reservation.
