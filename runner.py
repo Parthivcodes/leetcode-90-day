@@ -63,13 +63,12 @@ def load_plan():
 def select_problem(plan, start, now):
     if not start:
         raise Stop('Set START_DATE (YYYY-MM-DD) before activating the schedule.')
-    index = (now.astimezone(IST).date() - date.fromisoformat(start)).days
+    index = (now.astimezone(timezone.utc).date() - date.fromisoformat(start)).days
     return plan[index] if 0 <= index < 90 else None
 
 def in_window(now):
-    local = now.astimezone(IST)
-    # A delayed run cannot spill into the next day or consume tomorrow's slot.
-    return (8, 35) <= (local.hour, local.minute)
+    utc = now.astimezone(timezone.utc)
+    return (3, 5) <= (utc.hour, utc.minute)
 
 class Ledger:
     def __init__(self, repo, branch, token):
@@ -126,7 +125,7 @@ class LeetCode:
                 stamp = datetime.fromtimestamp(int(submission['timestamp']), timezone.utc)
             except (KeyError, ValueError, TypeError):
                 raise Stop('Submission history has an invalid timestamp.') from None
-            if stamp.astimezone(IST).date() == now.astimezone(IST).date() or stamp.date() == now.astimezone(timezone.utc).date():
+            if stamp.date() == now.astimezone(timezone.utc).date():
                 return question, False
         return question, True
 
@@ -158,9 +157,9 @@ def require_completed(saved, key):
     return record
 
 def audit_previous_day(config, plan, now, ledger):
-    # Audit a completed IST date only; this operation never submits.
-    yesterday = now.astimezone(IST).date() - timedelta(days=1)
-    probe = datetime.combine(yesterday, datetime.min.time(), tzinfo=IST)
+    # Audit a completed LeetCode (UTC) date only; never submit here.
+    yesterday = now.astimezone(timezone.utc).date() - timedelta(days=1)
+    probe = datetime.combine(yesterday, datetime.min.time(), tzinfo=timezone.utc)
     if select_problem(plan, config['start_date'], probe) is None:
         print('Previous day outside the plan; no audit needed.')
         return
@@ -171,27 +170,32 @@ def audit_previous_day(config, plan, now, ledger):
     require_completed(saved, key)
     print(f'Daily audit passed for {yesterday}.')
 
-def run_live(config, plan, now, lc, ledger):
+def run_live(config, plan, now, lc, ledger, manual=False):
     problem = select_problem(plan, config['start_date'], now)
     if problem is None:
         print('Outside the 90-day period; no submission.')
         return
-    key = now.astimezone(IST).date().isoformat() + '.json'
+    key = now.astimezone(timezone.utc).date().isoformat() + '.json'
     existing = ledger.read(key)
     if existing is not None:
-        require_completed(existing, key)
-        print('Today already completed; no submission.')
-        return
-    if not in_window(now):
-        raise Stop('Missed submission window (08:35 to midnight IST); no submission.')
+        previous = require_completed(existing, key)
+        # Old IST skips may refer to yesterday in UTC. Recheck history and
+        # replace only a skip (which never sent a submission), using its SHA.
+        if previous.get('status') != 'skipped-existing-submission' or previous.get('calendar_timezone') == 'UTC':
+            print('Today already completed; no submission.')
+            return
+        print('Rechecking legacy IST skip against LeetCode UTC history.')
+    if not in_window(now) and not manual:
+        raise Stop('Outside submission window (03:05 to midnight UTC); no submission.')
     question, allowed = lc.preflight(config['username'], problem, now)
     record = {'date': key[:-5], 'day': problem['day'], 'slug': problem['slug'],
-              'at': now.isoformat(), 'status': 'reserved' if allowed else 'skipped-existing-submission'}
+              'at': now.isoformat(), 'calendar_timezone': 'UTC',
+              'status': 'reserved' if allowed else 'skipped-existing-submission'}
     code = (ROOT / problem['solution']).read_text()
     record['code_sha256'] = hashlib.sha256(code.encode()).hexdigest()
     # Create without a SHA: GitHub rejects an existing file atomically.
     # If this write times out, never submit. The reservation may already exist.
-    saved = ledger.write(key, record)
+    saved = ledger.write(key, record, existing)
     if not allowed:
         print('Existing submission today; the scheduled problem is skipped.')
         return
@@ -259,7 +263,7 @@ def main():
         audit_previous_day(config, plan, now, ledger)
         return
     lc = LeetCode(os.environ.get('LEETCODE_SESSION'), os.environ.get('LEETCODE_CSRF_TOKEN'))
-    run_live(config, plan, now, lc, ledger)
+    run_live(config, plan, now, lc, ledger, manual=os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch')
 
 if __name__ == '__main__':
     try:
