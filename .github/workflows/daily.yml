@@ -11,7 +11,7 @@ on:
       mode:
         description: Preview, authenticated check, or today's single submission
         type: choice
-        options: [preview, preflight, live, audit]
+        options: [preview, preflight, live, audit, notify]
         default: preview
       day:
         description: Day to preview or check (live always uses today's calendar slot)
@@ -38,6 +38,7 @@ jobs:
           python3 -m unittest discover -s tests -v
           python3 tests/check_cpp.py
       - name: Daily operation
+        if: github.event_name == 'schedule' || inputs.mode != 'notify'
         env:
           MODE: ${{ github.event_name == 'schedule' && (github.event.schedule == '5 1 * * *' && 'audit' || 'live') || inputs.mode }}
           DAY: ${{ inputs.day || 1 }}
@@ -49,7 +50,7 @@ jobs:
           LEETCODE_CSRF_TOKEN: ${{ secrets.LEETCODE_CSRF_TOKEN }}
         run: python3 runner.py --mode "$MODE" --day "$DAY"
       - name: Email acceptance through a GitHub mention (once per UTC day)
-        if: success() && (github.event_name == 'schedule' || inputs.mode == 'live' || inputs.mode == 'audit')
+        if: success() && (github.event_name == 'schedule' || inputs.mode == 'live' || inputs.mode == 'audit' || inputs.mode == 'notify')
         env:
           MODE: ${{ github.event_name == 'schedule' && (github.event.schedule == '5 1 * * *' && 'audit' || 'live') || inputs.mode }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
