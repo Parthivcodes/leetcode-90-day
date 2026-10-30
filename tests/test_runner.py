@@ -62,7 +62,7 @@ class RunnerTests(unittest.TestCase):
             runner.select_problem(self.plan, None, self.now)
 
     def test_window_boundaries(self):
-        for hour, minute, expected in [(3,4,False),(3,5,True),(17,29,True),(18,29,True),(18,30,False)]:
+        for hour, minute, expected in [(3,4,False),(3,5,True),(17,29,True),(18,29,True),(23,59,True)]:
             self.assertEqual(runner.in_window(self.now.replace(hour=hour,minute=minute)), expected)
 
     def test_second_run_never_resubmits(self):
@@ -118,6 +118,13 @@ class RunnerTests(unittest.TestCase):
         with self.assertRaises(runner.Stop):
             runner.run_live(self.config, self.plan, self.now.replace(hour=1), lc, self.ledger)
         self.assertEqual(lc.submitted, 0)
+
+    def test_manual_early_run_still_reserves_only_one_attempt(self):
+        lc = FakeLC()
+        early = self.now.replace(hour=1)
+        runner.run_live(self.config, self.plan, early, lc, self.ledger, manual=True)
+        runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
+        self.assertEqual(lc.submitted, 1)
 
     def test_all_backup_runs_submit_only_once(self):
         lc = FakeLC()
@@ -193,6 +200,25 @@ class RunnerTests(unittest.TestCase):
     def test_preflight_detects_any_submission_today(self):
         _, allowed = self.preflight(history={'submissions_dump':[{'timestamp':str(int(self.now.timestamp()))}]})
         self.assertFalse(allowed)
+
+    def test_legacy_ist_skip_rechecked_once_and_preserved_on_failure(self):
+        self.ledger.write('2026-10-27.json', {'date':'2026-10-27', 'status':'skipped-existing-submission'})
+        lc = FakeLC()
+        runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
+        runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
+        self.assertEqual(lc.submitted, 1)
+        self.assertEqual(self.ledger.records['2026-10-27.json']['calendar_timezone'], 'UTC')
+
+    def test_previous_utc_day_does_not_block_today(self):
+        previous = self.now.replace(hour=0, minute=30)
+        from datetime import timedelta
+        previous -= timedelta(hours=5)
+        _, allowed = self.preflight(history={'submissions_dump':[{'timestamp':str(int(previous.timestamp()))}]})
+        self.assertTrue(allowed)
+
+    def test_utc_date_stays_previous_day_after_ist_midnight(self):
+        late = self.now.replace(hour=22)
+        self.assertEqual(runner.select_problem(self.plan, self.config['start_date'], late)['day'], 1)
 
     def test_preflight_accepts_verified_free_problem(self):
         _, allowed = self.preflight()
