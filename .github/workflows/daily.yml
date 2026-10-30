@@ -19,6 +19,7 @@ on:
         default: 1
 permissions:
   contents: write
+  issues: write
 concurrency:
   group: leetcode-daily-submission
   cancel-in-progress: false
@@ -47,6 +48,13 @@ jobs:
           LEETCODE_SESSION: ${{ secrets.LEETCODE_SESSION }}
           LEETCODE_CSRF_TOKEN: ${{ secrets.LEETCODE_CSRF_TOKEN }}
         run: python3 runner.py --mode "$MODE" --day "$DAY"
+      - name: Email acceptance through a GitHub mention (once per UTC day)
+        if: success() && (github.event_name == 'schedule' || inputs.mode == 'live' || inputs.mode == 'audit')
+        env:
+          MODE: ${{ github.event_name == 'schedule' && (github.event.schedule == '5 1 * * *' && 'audit' || 'live') || inputs.mode }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: python3 notify_acceptance.py
       - name: Failure alert and recovery instructions
         if: failure()
         env:
