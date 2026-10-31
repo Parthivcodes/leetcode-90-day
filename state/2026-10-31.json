@@ -4,7 +4,11 @@
   "slug": "remove-duplicates-from-sorted-list",
   "at": "2026-10-31T09:30:17.010599+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "code_sha256": "1a71343e52f946c4e19e98d8ae3dd0431e6cf97ac918fb9167566173a4bb6653",
-  "submission_id": 2186083559
+  "submission_id": 2186083559,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
