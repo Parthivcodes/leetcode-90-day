@@ -4,7 +4,11 @@
   "slug": "palindrome-linked-list",
   "at": "2026-11-03T10:43:20.615082+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "code_sha256": "467b783ec1c35caaba8efd734fffa3abe08849bba2fb755e8af347559f553138",
-  "submission_id": 2188512208
+  "submission_id": 2188512208,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
