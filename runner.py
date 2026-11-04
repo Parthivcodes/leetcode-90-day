@@ -1,4 +1,4 @@
-"""One calendar slot, one durable attempt, no automatic submission retries."""
+"""An extendable queue, one durable daily attempt, no repeated problems."""
 import argparse
 import base64
 import hashlib
@@ -13,7 +13,6 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 ROOT = Path(__file__).resolve().parent
 IST = timezone(timedelta(hours=5, minutes=30))
-EXPECTED = {'Linked Lists': 20, 'Hashing': 20, 'Arrays': 20, 'Strings': 15, 'Stacks and Queues': 15}
 
 class Stop(RuntimeError):
     pass
@@ -42,29 +41,46 @@ def request_json(url, headers, payload=None, method=None, allow_missing=False):
 
 def load_plan():
     plan = json.loads((ROOT / 'roadmap.json').read_text())
-    counts = {key: 0 for key in EXPECTED}
     seen = set()
-    if len(plan) != 90:
-        raise Stop('The roadmap must contain exactly 90 entries.')
+    if not plan:
+        raise Stop('The problem queue is empty; add prepared solutions.')
     for day, p in enumerate(plan, 1):
         if p['day'] != day or p['slug'] in seen or p['difficulty'] not in ('Easy', 'Medium'):
             raise Stop('Invalid day, duplicate problem, or disallowed difficulty.')
         seen.add(p['slug'])
-        if p['topic'] not in counts:
-            raise Stop('Unknown topic.')
-        counts[p['topic']] += 1
+        if not isinstance(p.get('topic'), str) or not p['topic'].strip():
+            raise Stop('Every problem needs a topic.')
         path = (ROOT / p['solution']).resolve()
         if not path.is_relative_to((ROOT / 'solutions').resolve()) or path.suffix != '.cpp' or not path.is_file():
             raise Stop('Missing or invalid C++ solution file.')
-    if counts != EXPECTED:
-        raise Stop('Topic allocation differs from the approved 90-day plan.')
     return plan
 
-def select_problem(plan, start, now):
+def select_problem(plan, start, now, submitted=()):
     if not start:
         raise Stop('Set START_DATE (YYYY-MM-DD) before activating the schedule.')
     index = (now.astimezone(timezone.utc).date() - date.fromisoformat(start)).days
-    return plan[index] if 0 <= index < 90 else None
+    if index < 0:
+        return None
+    return next((p for p in plan if p['slug'] not in submitted), None)
+
+
+def previously_reserved():
+    """Keep ambiguous attempts excluded even if LeetCode history omits them."""
+    used = set()
+    for path in (ROOT / 'state').glob('????-??-??.json'):
+        try:
+            record = json.loads(path.read_text())
+            status = record['status']
+            if status in ('reserved', 'submitted', 'accepted', 'needs-review'):
+                slug = record['slug']
+                if not isinstance(slug, str) or not slug:
+                    raise ValueError()
+                used.add(slug)
+            elif status != 'skipped-existing-submission':
+                raise ValueError()
+        except (KeyError, ValueError, TypeError):
+            raise Stop(f'Invalid historical record {path.name}; selection blocked.') from None
+    return used
 
 def in_window(now):
     utc = now.astimezone(timezone.utc)
@@ -103,31 +119,65 @@ class LeetCode:
             raise Stop('LeetCode metadata or authentication check failed.')
         return result['data']
 
-    def preflight(self, username, problem, now):
+    def submission_history(self, username, now):
         status = self.graphql('{ userStatus { isSignedIn username } }')['userStatus']
         if not status or status.get('isSignedIn') is not True or status.get('username', '').lower() != username.lower():
             raise Stop('LeetCode session is expired or belongs to a different username.')
-        question = self.graphql('query($slug:String!){question(titleSlug:$slug){questionId questionFrontendId titleSlug difficulty isPaidOnly codeSnippets{langSlug code}}}', {'slug': problem['slug']})['question']
+        used, ids = set(), set()
+        today = False
+        # Exhaust all pages, not only recent/accepted submissions. Fail closed
+        # if history is unavailable, malformed, repeats, or exceeds the bound.
+        offset = 0
+        for _ in range(500):
+            history = self.graphql('query($offset:Int!){submissionList(offset:$offset,limit:100){hasNext submissions{id timestamp titleSlug statusDisplay}}}', {'offset': offset}).get('submissionList')
+            if not isinstance(history, dict) or not isinstance(history.get('hasNext'), bool):
+                raise Stop('Complete submission history could not be verified.')
+            submissions = history.get('submissions')
+            if not isinstance(submissions, list) or (not submissions and history['hasNext']):
+                raise Stop('Complete submission history could not be verified.')
+            for submission in submissions:
+                try:
+                    slug = submission['titleSlug']
+                    ident = str(submission['id'])
+                    stamp = datetime.fromtimestamp(int(submission['timestamp']), timezone.utc)
+                    if not isinstance(slug, str) or not slug or not ident or ident in ids:
+                        raise ValueError()
+                except (KeyError, ValueError, TypeError, OverflowError):
+                    raise Stop('Submission history is incomplete or repeated; selection blocked.') from None
+                ids.add(ident)
+                used.add(slug)
+                today |= stamp.date() == now.astimezone(timezone.utc).date()
+            if not history['hasNext']:
+                return used, today
+            offset += len(submissions)
+        raise Stop('Submission history exceeds 500 pages; selection blocked rather than risking a repeat.')
+
+    def question_details(self, problem):
+        question = self.graphql('query($slug:String!){question(titleSlug:$slug){questionId questionFrontendId titleSlug status difficulty isPaidOnly codeSnippets{langSlug code}}}', {'slug': problem['slug']})['question']
         if not question or question.get('titleSlug') != problem['slug'] or str(question.get('questionFrontendId')) != str(problem['number']):
             raise Stop('Problem identity could not be verified.')
         if question.get('difficulty') not in ('Easy', 'Medium') or question.get('isPaidOnly') is not False:
             raise Stop('Hard, premium, or unverified problem: submission blocked.')
         if not any(x.get('langSlug') == 'cpp' for x in question.get('codeSnippets', [])):
             raise Stop('C++ is not available for this problem.')
-        history = self.graphql('query { submissionList(offset:0,limit:20) { hasNext submissions { id timestamp statusDisplay } } }').get('submissionList')
-        if not isinstance(history, dict):
-            raise Stop('Submission history could not be verified.')
-        submissions = history.get('submissions')
-        if not isinstance(submissions, list) or (not submissions and history.get('hasNext')):
-            raise Stop('Submission history could not be verified.')
-        for submission in submissions:
-            try:
-                stamp = datetime.fromtimestamp(int(submission['timestamp']), timezone.utc)
-            except (KeyError, ValueError, TypeError):
-                raise Stop('Submission history has an invalid timestamp.') from None
-            if stamp.date() == now.astimezone(timezone.utc).date():
-                return question, False
-        return question, True
+        if 'status' not in question or question['status'] not in (None, 'ac', 'notac'):
+            raise Stop('Problem submission status could not be verified.')
+        return question
+
+    def next_problem(self, username, plan, now, used):
+        history, today = self.submission_history(username, now)
+        if today:
+            return None, None, False
+        used = set(used) | history
+        for problem in plan:
+            if problem['slug'] in used:
+                continue
+            question = self.question_details(problem)
+            # Status also catches solved/attempted problems omitted from history.
+            if question['status'] is not None:
+                continue
+            return problem, question, True
+        raise Stop('No unsubmitted prepared problems remain. Add new easy/medium solutions to roadmap.json; the schedule remains enabled.')
 
     def submit_once(self, question, problem, code):
         headers = {**self.headers, 'Referer': f"https://leetcode.com/problems/{problem['slug']}/"}
@@ -171,9 +221,8 @@ def audit_previous_day(config, plan, now, ledger):
     print(f'Daily audit passed for {yesterday}.')
 
 def run_live(config, plan, now, lc, ledger, manual=False):
-    problem = select_problem(plan, config['start_date'], now)
-    if problem is None:
-        print('Outside the 90-day period; no submission.')
+    if select_problem(plan, config['start_date'], now) is None:
+        print('Before start date; no submission.')
         return
     key = now.astimezone(timezone.utc).date().isoformat() + '.json'
     existing = ledger.read(key)
@@ -187,17 +236,19 @@ def run_live(config, plan, now, lc, ledger, manual=False):
         print('Rechecking legacy IST skip against LeetCode UTC history.')
     if not in_window(now) and not manual:
         raise Stop('Outside submission window (03:05 to midnight UTC); no submission.')
-    question, allowed = lc.preflight(config['username'], problem, now)
-    record = {'date': key[:-5], 'day': problem['day'], 'slug': problem['slug'],
+    problem, question, allowed = lc.next_problem(config['username'], plan, now, previously_reserved())
+    record = {'date': key[:-5],
               'at': now.isoformat(), 'calendar_timezone': 'UTC',
               'status': 'reserved' if allowed else 'skipped-existing-submission'}
-    code = (ROOT / problem['solution']).read_text()
-    record['code_sha256'] = hashlib.sha256(code.encode()).hexdigest()
+    if allowed:
+        code = (ROOT / problem['solution']).read_text()
+        record.update(day=problem['day'], slug=problem['slug'],
+                      code_sha256=hashlib.sha256(code.encode()).hexdigest())
     # Create without a SHA: GitHub rejects an existing file atomically.
     # If this write times out, never submit. The reservation may already exist.
     saved = ledger.write(key, record, existing)
     if not allowed:
-        print('Existing submission today; the scheduled problem is skipped.')
+        print('Existing submission today; queue is unchanged.')
         return
     try:
         submission_id = lc.submit_once(question, problem, code)
@@ -242,8 +293,8 @@ def main():
     config = json.loads((ROOT / 'config.json').read_text())
     config['start_date'] = os.environ.get('START_DATE') or config['start_date']
     plan = load_plan()
-    if not 1 <= args.day <= 90:
-        raise Stop('Preview day must be between 1 and 90.')
+    if not 1 <= args.day <= len(plan):
+        raise Stop(f'Preview queue position must be between 1 and {len(plan)}.')
     if args.mode == 'preview':
         p = plan[args.day-1]
         print(json.dumps({'username': config['username'], **p, 'submitted': False}, indent=2))
@@ -253,8 +304,10 @@ def main():
         lc = LeetCode(os.environ.get('LEETCODE_SESSION'), os.environ.get('LEETCODE_CSRF_TOKEN'))
         diagnose_session(os.environ.get('LEETCODE_SESSION'), now)
         diagnose_public_access()
-        _, allowed = lc.preflight(config['username'], plan[args.day-1], now)
-        print(f'Authentication and problem checks passed. Daily slot available: {allowed}. Nothing submitted.')
+        problem, _, allowed = lc.next_problem(config['username'], plan, now, previously_reserved())
+        print(f'Complete history and queue checks passed. Daily slot available: {allowed}. Nothing submitted.')
+        if problem:
+            print(f"Next unsubmitted problem: {problem['slug']} (queue position {problem['day']}).")
         return
     if os.environ.get('ENABLE_SUBMISSIONS') != 'true':
         raise Stop('Live submissions are disabled.')

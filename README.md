@@ -1,8 +1,8 @@
-# 90-day C++ practice
+# Daily C++ practice � ongoing
 
-Prepared for **GandhiSmit06**. [Open the 90-day roadmap](ROADMAP.md).
+Prepared for **GandhiSmit06**. [Open the initial 90-question queue](ROADMAP.md).
 
-| Calendar days | Topic | Questions |
+| Queue positions | Topic | Questions |
 |---|---|---:|
 | 1–20 | Linked Lists | 20 |
 | 21–40 | Hashing | 20 |
@@ -20,9 +20,9 @@ Prepared for **GandhiSmit06**. [Open the 90-day roadmap](ROADMAP.md).
 2. Sign in to the intended LeetCode account in your own browser. In that browser's developer tools, under Application/Storage → Cookies → `https://leetcode.com`, find `LEETCODE_SESSION` and `csrftoken`. Add their values directly to GitHub repository secrets named `LEETCODE_SESSION` and `LEETCODE_CSRF_TOKEN`. Do not put these values in chat, source files, screenshots, issues, or logs. Treat them like passwords. No password is stored by this project.
 3. Under **Variables**, set `START_DATE` to the intended first day in `YYYY-MM-DD` format. Choose a date whose 08:35 IST run has not passed. Keep this date fixed after starting.
 4. Run **Daily C++ practice → Run workflow → preview**, then **preflight**. Preview is offline. Preflight verifies authentication, identity, current problem metadata, and submission history without submitting.
-5. Only after preflight succeeds, set repository variable `ENABLE_SUBMISSIONS` to `true`. Remove it or set it to `false` to pause. Default-branch workflow write access must be allowed for the daily ledger. The workflow requests only repository contents access.
+5. Only after preflight succeeds, set repository variable `ENABLE_SUBMISSIONS` to `true`. Remove it or set it to `false` to pause. Default-branch workflow write access must be allowed for the daily ledger. The workflow requests repository contents access for its ledger and issues access for acceptance notifications.
 
-The primary daily run is **08:35 IST**, with backups at **12:35, 18:35, and 21:35 IST**. Live runs may operate from 08:35 IST until the end of the current UTC day (05:30 IST the next morning). A read-only audit at **06:35 IST** checks the previous UTC calendar day and fails if its record is missing or unconfirmed. Manual `live` runs use the current calendar day, never the preview day field. Stop after 90 calendar days is enforced in the runner; the scheduled workflow may still start and exit without submitting. Disable the workflow after completion to stop these no-op runs.
+The primary daily run is **08:35 IST**, with backups at **12:35, 18:35, and 21:35 IST**. Live runs may operate from 08:35 IST until the end of the current UTC day (05:30 IST the next morning). A read-only audit at **06:35 IST** checks the previous UTC calendar day and fails if its record is missing or unconfirmed. Manual `live` runs use the current calendar day, never the preview day field. There is no end date or 90-day cutoff. The schedule continues until you disable it. The runner takes the first never-submitted problem from the ordered queue, skipping any previously attempted problem regardless of outcome.
 
 ## Submission limit and failure behavior
 
@@ -32,7 +32,10 @@ The primary daily run is **08:35 IST**, with backups at **12:35, 18:35, and 21:3
 - Out-of-window runs without a completed record fail instead of silently succeeding. The morning audit catches a day when no submission run started. Both use GitHub Actions failure emails; enable Email and Only notify for failed workflows in your GitHub notification settings. If GitHub never starts any job including the audit, GitHub alone cannot alert about its own total outage.
 - If a request times out, the reservation stays. A rerun cannot submit again. This intentionally favors avoiding duplicates over guaranteeing daily success.
 - Wrong answers, compilation errors, expired sessions, HTTP 403/429, and unknown responses do not cause resubmission. Investigate failures in Actions; refresh expired credentials directly in GitHub secrets.
-- No catch-up batches. Missing day 10 means day 11 still uses problem 11. This is 90 calendar slots, not a promise of 90 accepted submissions.
+- No catch-up batches. Missing a day leaves the queue unchanged. Each available day uses the next unseen problem, not a calendar-indexed problem.
+- Complete authenticated submission history and per-problem status are checked before selection. Historical bot reservations also exclude uncertain attempts. If history cannot be verified, no submission is sent.
+- The initial queue contains 90 prepared solutions. Append new unique easy/medium problems and tested C++ solutions to `roadmap.json` in the desired topic order; `day` is a sequential queue position. The next topic sequence is awaiting your instructions. Repeating a topic must use new problems.
+- If the prepared queue is exhausted, the run fails with a clear message so failure notifications can alert you. The schedule stays enabled, but cannot submit until new solutions are added.
 - Do not delete or edit ledger records or change `START_DATE` during the run. Doing so can defeat the daily limit.
 - The bot cannot prevent you from submitting manually after it runs, or eliminate a race with a simultaneous manual submission. Avoid submitting manually around the scheduled time if the account-wide limit must remain one.
 

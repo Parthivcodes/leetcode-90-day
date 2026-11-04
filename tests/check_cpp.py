@@ -12,7 +12,7 @@ cases = {}
 for line in (ROOT/'tests/cases.txt').read_text().splitlines():
     key, code = line.split('|',1)
     cases[int(key)] = code
-assert set(cases) == set(range(1,91)), 'Every problem requires a test.'
+assert set(cases) == {p['day'] for p in plan}, 'Every problem requires a test.'
 compiler = shutil.which(os.environ.get('CXX','g++'))
 if not compiler:
     raise SystemExit('C++ compiler unavailable. Run this check on the Ubuntu GitHub Actions runner.')
@@ -28,7 +28,7 @@ for p in plan:
     body = '\n'.join(line for line in body.splitlines() if not line.startswith('#include'))
     instance = '' if p['day'] in (77,78,82,83) else 'Solution s;'
     units.append(f"namespace day{p['day']} {{\n{body}\nvoid test(){{{instance}{cases[p['day']]}}}\n}}")
-units.append('int main(){' + ''.join(f"day{p['day']}::test();" for p in plan) + 'cout << "90 C++ solution checks passed\\n";}')
+units.append('int main(){' + ''.join(f"day{p['day']}::test();" for p in plan) + 'cout << "All prepared C++ solution checks passed\\n";}')
 with tempfile.TemporaryDirectory() as folder:
     source = Path(folder)/'all.cpp'
     binary = Path(folder)/('checks.exe' if os.name=='nt' else 'checks')

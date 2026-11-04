@@ -3,5 +3,7 @@
   "language": "cpp",
   "timezone": "Asia/Kolkata",
   "start_date": null,
-  "days": 90
+  "end_date": null,
+  "repeat_policy": "never-resubmit",
+  "sequence_source": "roadmap.json (ordered, extendable queue)"
 }

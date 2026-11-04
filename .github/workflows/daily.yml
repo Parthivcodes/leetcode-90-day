@@ -14,7 +14,7 @@ on:
         options: [preview, preflight, live, audit, notify]
         default: preview
       day:
-        description: Day to preview or check (live always uses today's calendar slot)
+        description: Queue position to preview (preflight and live find the next unseen problem)
         type: number
         default: 1
 permissions:

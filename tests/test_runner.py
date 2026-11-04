@@ -29,8 +29,8 @@ class FakeLC:
     def __init__(self, allowed=True, crash=False, accepted=True):
         self.allowed, self.crash, self.accepted = allowed, crash, accepted
         self.submitted = 0
-    def preflight(self, *args):
-        return {'questionId': '206'}, self.allowed
+    def next_problem(self, username, plan, now, used):
+        return next(p for p in plan if p['slug'] not in used), {'questionId': '206'}, self.allowed
     def submit_once(self, *args):
         self.submitted += 1
         if self.crash:
@@ -45,6 +45,9 @@ class RunnerTests(unittest.TestCase):
         self.config = {'username': 'GandhiSmit06', 'start_date': '2026-10-27'}
         self.now = datetime(2026, 10, 27, 15, 5, tzinfo=timezone.utc)
         self.ledger = FakeLedger()
+        self.reserved = patch.object(runner, 'previously_reserved', return_value=set())
+        self.reserved.start()
+        self.addCleanup(self.reserved.stop)
 
     def test_exact_90_unique_easy_medium(self):
         self.assertEqual(len(self.plan), 90)
@@ -52,7 +55,7 @@ class RunnerTests(unittest.TestCase):
         self.assertNotIn('Hard', {p['difficulty'] for p in self.plan})
 
     def test_calendar_boundaries(self):
-        for offset, expected in [(-1,None),(0,1),(89,90),(90,None),(200,None)]:
+        for offset, expected in [(-1,None),(0,1),(89,1),(90,1),(200,1)]:
             from datetime import timedelta
             p = runner.select_problem(self.plan, self.config['start_date'], self.now+timedelta(days=offset))
             self.assertEqual(p['day'] if p else None, expected)
@@ -101,16 +104,16 @@ class RunnerTests(unittest.TestCase):
             runner.run_live(self.config,self.plan,self.now,lc,self.ledger)
         self.assertEqual(lc.submitted,1)
 
-    def test_expired_plan_does_not_submit(self):
+    def test_no_expiry_after_90_days(self):
         lc = FakeLC()
         runner.run_live(self.config,self.plan,self.now.replace(year=2027),lc,self.ledger)
-        self.assertEqual(lc.submitted,0)
+        self.assertEqual(lc.submitted,1)
 
     def test_no_catch_up(self):
         from datetime import timedelta
         lc=FakeLC()
         runner.run_live(self.config,self.plan,self.now+timedelta(days=4),lc,self.ledger)
-        self.assertEqual(next(iter(self.ledger.records.values()))['day'],5)
+        self.assertEqual(next(iter(self.ledger.records.values()))['day'],1)
         self.assertEqual(lc.submitted,1)
 
     def test_late_run_without_record_fails_without_submission(self):
@@ -153,7 +156,7 @@ class RunnerTests(unittest.TestCase):
 
     def test_backup_recovers_preflight_failure(self):
         lc = FakeLC()
-        with patch.object(lc, 'preflight', side_effect=runner.Stop('Temporary outage')):
+        with patch.object(lc, 'next_problem', side_effect=runner.Stop('Temporary outage')):
             with self.assertRaises(runner.Stop):
                 runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
         runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
@@ -164,12 +167,12 @@ class RunnerTests(unittest.TestCase):
         user = {'isSignedIn': True, 'username': 'GandhiSmit06', **(user_changes or {})}
         question = {'questionId': '206', 'questionFrontendId': '206',
                     'titleSlug': 'reverse-linked-list', 'difficulty': 'Easy',
-                    'isPaidOnly': False, 'codeSnippets': [{'langSlug': 'cpp'}],
+                    'isPaidOnly': False, 'status': None, 'codeSnippets': [{'langSlug': 'cpp'}],
                     **(question_changes or {})}
         result = history if history is not None else {'submissions_dump': []}
         converted = {'submissions': result['submissions_dump'], 'hasNext': result.get('has_next', False)} if 'submissions_dump' in result else result
-        with patch.object(client,'graphql',side_effect=[{'userStatus':user},{'question':question},{'submissionList':converted}]):
-            return client.preflight('GandhiSmit06',self.plan[0],self.now)
+        with patch.object(client,'graphql',side_effect=[{'userStatus':user},{'submissionList':converted},{'question':question}]):
+            return client.next_problem('GandhiSmit06',self.plan,self.now,set())
 
     def test_preflight_rejects_hard(self):
         with self.assertRaises(runner.Stop):
@@ -198,7 +201,7 @@ class RunnerTests(unittest.TestCase):
             self.preflight(history={})
 
     def test_preflight_detects_any_submission_today(self):
-        _, allowed = self.preflight(history={'submissions_dump':[{'timestamp':str(int(self.now.timestamp()))}]})
+        _, _, allowed = self.preflight(history={'submissions_dump':[{'id':'1','titleSlug':'other-problem','timestamp':str(int(self.now.timestamp()))}]})
         self.assertFalse(allowed)
 
     def test_legacy_ist_skip_rechecked_once_and_preserved_on_failure(self):
@@ -213,7 +216,7 @@ class RunnerTests(unittest.TestCase):
         previous = self.now.replace(hour=0, minute=30)
         from datetime import timedelta
         previous -= timedelta(hours=5)
-        _, allowed = self.preflight(history={'submissions_dump':[{'timestamp':str(int(previous.timestamp()))}]})
+        _, _, allowed = self.preflight(history={'submissions_dump':[{'id':'1','titleSlug':'other-problem','timestamp':str(int(previous.timestamp()))}]})
         self.assertTrue(allowed)
 
     def test_utc_date_stays_previous_day_after_ist_midnight(self):
@@ -221,7 +224,7 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(runner.select_problem(self.plan, self.config['start_date'], late)['day'], 1)
 
     def test_preflight_accepts_verified_free_problem(self):
-        _, allowed = self.preflight()
+        _, _, allowed = self.preflight()
         self.assertTrue(allowed)
 
 if __name__ == '__main__':
