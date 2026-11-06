@@ -2,9 +2,13 @@
   "date": "2026-11-06",
   "at": "2026-11-06T10:41:54.557032+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "day": 13,
   "slug": "rotate-list",
   "code_sha256": "3b6cd26df870c6d48081b814be50dd11717dfa38f766fd0a2ea2b537ee4aea8e",
-  "submission_id": 2190641796
+  "submission_id": 2190641796,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
