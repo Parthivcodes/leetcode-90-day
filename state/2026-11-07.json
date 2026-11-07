@@ -2,9 +2,13 @@
   "date": "2026-11-07",
   "at": "2026-11-07T09:54:59.722291+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "day": 14,
   "slug": "remove-duplicates-from-sorted-list-ii",
   "code_sha256": "3e29dd46c4bffd831573283350b09216db743252a09952d71e96b9f0f20837ab",
-  "submission_id": 2191196594
+  "submission_id": 2191196594,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
