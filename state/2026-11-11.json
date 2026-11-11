@@ -2,10 +2,14 @@
   "date": "2026-11-11",
   "at": "2026-11-11T11:24:39.624784+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "rejected_attempts": [],
   "day": 19,
   "slug": "odd-even-linked-list",
   "code_sha256": "6ae242b24f7d216c07169b3fa56ff9d167e7d1e0d0404245ed2ac859907b1117",
-  "submission_id": 2193828302
+  "submission_id": 2193828302,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
