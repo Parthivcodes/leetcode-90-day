@@ -1,4 +1,4 @@
-"""An extendable queue, one durable daily attempt, no repeated problems."""
+"""An extendable queue, one accepted submission per UTC day, no repeated problems."""
 import argparse
 import base64
 import hashlib
@@ -13,6 +13,12 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 ROOT = Path(__file__).resolve().parent
 IST = timezone(timedelta(hours=5, minutes=30))
+
+MAX_DAILY_ATTEMPTS = 3
+REJECTION_VERDICTS = {
+    'Wrong Answer', 'Compile Error', 'Runtime Error', 'Time Limit Exceeded',
+    'Memory Limit Exceeded', 'Output Limit Exceeded',
+}
 
 class Stop(RuntimeError):
     pass
@@ -71,12 +77,13 @@ def previously_reserved():
         try:
             record = json.loads(path.read_text())
             status = record['status']
-            if status in ('reserved', 'submitted', 'accepted', 'needs-review'):
+            if status in ('reserved', 'submitted', 'accepted', 'needs-review', 'rejected'):
                 slug = record['slug']
                 if not isinstance(slug, str) or not slug:
                     raise ValueError()
                 used.add(slug)
-            elif status != 'skipped-existing-submission':
+            used.update(attempt['slug'] for attempt in record.get('rejected_attempts', []))
+            if status not in ('reserved', 'submitted', 'accepted', 'needs-review', 'rejected', 'skipped-existing-submission'):
                 raise ValueError()
         except (KeyError, ValueError, TypeError):
             raise Stop(f'Invalid historical record {path.name}; selection blocked.') from None
@@ -119,7 +126,7 @@ class LeetCode:
             raise Stop('LeetCode metadata or authentication check failed.')
         return result['data']
 
-    def submission_history(self, username, now):
+    def submission_history(self, username, now, rejected_ids=()):
         status = self.graphql('{ userStatus { isSignedIn username } }')['userStatus']
         if not status or status.get('isSignedIn') is not True or status.get('username', '').lower() != username.lower():
             raise Stop('LeetCode session is expired or belongs to a different username.')
@@ -146,7 +153,8 @@ class LeetCode:
                     raise Stop('Submission history is incomplete or repeated; selection blocked.') from None
                 ids.add(ident)
                 used.add(slug)
-                today |= stamp.date() == now.astimezone(timezone.utc).date()
+                today |= (stamp.date() == now.astimezone(timezone.utc).date()
+                          and (ident not in rejected_ids or submission.get('statusDisplay') not in REJECTION_VERDICTS))
             if not history['hasNext']:
                 return used, today
             offset += len(submissions)
@@ -164,8 +172,9 @@ class LeetCode:
             raise Stop('Problem submission status could not be verified.')
         return question
 
-    def next_problem(self, username, plan, now, used):
-        history, today = self.submission_history(username, now)
+    def next_problem(self, username, plan, now, used, rejected_ids=()):
+        history, today = (self.submission_history(username, now, rejected_ids) if rejected_ids
+                          else self.submission_history(username, now))
         if today:
             return None, None, False
         used = set(used) | history
@@ -197,12 +206,19 @@ class LeetCode:
         return {'status_code': None, 'status_msg': 'Pending; inspect LeetCode manually'}
 
 
-def require_completed(saved, key):
+def read_daily_record(saved, key):
     try:
         record = json.loads(base64.b64decode(saved['content']).decode())
     except (KeyError, ValueError, TypeError):
         raise Stop(f'Unreadable daily record {key}; no retry.') from None
-    if record.get('date') != key[:-5] or record.get('status') not in ('accepted', 'skipped-existing-submission'):
+    if not isinstance(record, dict) or record.get('date') != key[:-5]:
+        raise Stop(f'Invalid daily record {key}; no retry.')
+    return record
+
+
+def require_completed(saved, key):
+    record = read_daily_record(saved, key)
+    if record.get('status') not in ('accepted', 'skipped-existing-submission'):
         raise Stop(f'Unconfirmed daily record {key}; inspect Actions and LeetCode. No retry.')
     return record
 
@@ -221,50 +237,77 @@ def audit_previous_day(config, plan, now, ledger):
     print(f'Daily audit passed for {yesterday}.')
 
 def run_live(config, plan, now, lc, ledger, manual=False):
+    started = time.monotonic()
     if select_problem(plan, config['start_date'], now) is None:
         print('Before start date; no submission.')
         return
     key = now.astimezone(timezone.utc).date().isoformat() + '.json'
-    existing = ledger.read(key)
-    if existing is not None:
-        previous = require_completed(existing, key)
-        # Old IST skips may refer to yesterday in UTC. Recheck history and
-        # replace only a skip (which never sent a submission), using its SHA.
-        if previous.get('status') != 'skipped-existing-submission' or previous.get('calendar_timezone') == 'UTC':
-            print('Today already completed; no submission.')
-            return
-        print('Rechecking legacy IST skip against LeetCode UTC history.')
+    saved = ledger.read(key)
+    rejected = []
+    if saved is not None:
+        previous = read_daily_record(saved, key)
+        if previous.get('status') == 'rejected':
+            rejected = previous.get('rejected_attempts', []) + [
+                {k: previous[k] for k in ('slug', 'submission_id', 'verdict')}
+            ]
+            if any(type(attempt['submission_id']) is not int or attempt['submission_id'] <= 0
+                   or attempt['verdict'].get('status_msg') not in REJECTION_VERDICTS
+                   or attempt['verdict'].get('status_code') in (None, 10)
+                   for attempt in rejected):
+                raise Stop('Unverified rejection in the daily record; no retry.')
+        else:
+            require_completed(saved, key)
+            if previous['status'] == 'accepted' or previous.get('calendar_timezone') == 'UTC':
+                print('Today already completed; no submission.')
+                return
+            print('Rechecking legacy IST skip against LeetCode UTC history.')
     if not in_window(now) and not manual:
         raise Stop('Outside submission window (03:05 to midnight UTC); no submission.')
-    problem, question, allowed = lc.next_problem(config['username'], plan, now, previously_reserved())
-    record = {'date': key[:-5],
-              'at': now.isoformat(), 'calendar_timezone': 'UTC',
-              'status': 'reserved' if allowed else 'skipped-existing-submission'}
-    if allowed:
-        code = (ROOT / problem['solution']).read_text()
-        record.update(day=problem['day'], slug=problem['slug'],
-                      code_sha256=hashlib.sha256(code.encode()).hexdigest())
-    # Create without a SHA: GitHub rejects an existing file atomically.
-    # If this write times out, never submit. The reservation may already exist.
-    saved = ledger.write(key, record, existing)
-    if not allowed:
-        print('Existing submission today; queue is unchanged.')
-        return
-    try:
+
+    used = previously_reserved()
+    while len(rejected) < MAX_DAILY_ATTEMPTS:
+        excluded = used | {attempt['slug'] for attempt in rejected}
+        if rejected:
+            ids = {str(attempt['submission_id']) for attempt in rejected}
+            problem, question, allowed = lc.next_problem(config['username'], plan, now, excluded, ids)
+        else:
+            problem, question, allowed = lc.next_problem(config['username'], plan, now, excluded)
+        record = {'date': key[:-5], 'at': now.isoformat(), 'calendar_timezone': 'UTC',
+                  'status': 'reserved' if allowed else 'skipped-existing-submission',
+                  'rejected_attempts': rejected.copy()}
+        if allowed:
+            code = (ROOT / problem['solution']).read_text()
+            record.update(day=problem['day'], slug=problem['slug'],
+                          code_sha256=hashlib.sha256(code.encode()).hexdigest())
+        elapsed = timedelta(seconds=time.monotonic() - started)
+        if allowed and (now.astimezone(timezone.utc) + elapsed).date().isoformat() != key[:-5]:
+            raise Stop('UTC day ended before the question could submit.')
+        # GitHub's file SHA prevents competing workers from reserving the same slot.
+        saved = ledger.write(key, record, saved)
+        if not allowed:
+            print('Existing submission today; queue is unchanged.')
+            return
         submission_id = lc.submit_once(question, problem, code)
         record.update(status='submitted', submission_id=submission_id)
         saved = ledger.write(key, record, saved)
         verdict = lc.verdict(submission_id)
-        record.update(status='accepted' if verdict['status_code'] == 10 else 'needs-review', verdict=verdict)
-        ledger.write(key, record, saved)
-        print(f"Day {problem['day']}: {problem['slug']}: {record['status']}")
-        if record['status'] != 'accepted':
-            raise Stop('Submission was not confirmed accepted. No retry will be made.')
-    except Exception as exc:
-        # Reservation must remain even after a crash, HTTP timeout, or reporting failure.
-        if isinstance(exc, Stop):
-            raise
-        raise Stop('Attempt stopped after reservation; inspect the saved record. No retry.') from None
+        if verdict['status_code'] == 10:
+            status = 'accepted'
+        elif verdict['status_code'] is not None and verdict['status_msg'] in REJECTION_VERDICTS:
+            status = 'rejected'
+        else:
+            status = 'needs-review'
+        record.update(status=status, verdict=verdict)
+        saved = ledger.write(key, record, saved)
+        print(f"{problem['slug']}: {verdict['status_msg']}")
+        if status == 'accepted':
+            return
+        if status == 'needs-review':
+            raise Stop('Submission outcome is unconfirmed. No fallback will be sent.')
+        rejected.append({'slug': problem['slug'], 'submission_id': submission_id, 'verdict': verdict})
+
+    raise Stop(f'All {MAX_DAILY_ATTEMPTS} daily attempts were rejected; no acceptance today.')
+
 
 def diagnose_session(session, now):
     # Decode expiry only; this is not signature verification or proof of validity.

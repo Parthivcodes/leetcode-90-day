@@ -1,4 +1,4 @@
-# Daily C++ practice — ongoing
+# Daily C++ practice ï¿½ ongoing
 
 Prepared for **GandhiSmit06**. [Open the initial 90-question queue](ROADMAP.md).
 
@@ -26,12 +26,12 @@ The primary daily run is **08:35 IST**, with backups at **12:35, 18:35, and 21:3
 
 ## Submission limit and failure behavior
 
-- At most one bot submission attempt per LeetCode UTC date. Only an existing submission in the current UTC date covers that day. A submission before 05:30 IST belongs to the previous LeetCode day.
+- The bot stops at the first Accepted verdict and tries at most three distinct questions per LeetCode UTC date. Only its own confirmed rejections are excluded from the same-day submission guard. A submission before 05:30 IST belongs to the previous LeetCode day.
 - The runner reserves the day's slot in `state/YYYY-MM-DD.json (UTC date)` **before** contacting the submission endpoint. The GitHub file creation is atomic. Concurrency is also serialized by the workflow.
-- Backup runs retry authentication/metadata checks only before a reservation exists. Accepted or manually covered days exit successfully; reserved, pending, and rejected attempts fail visibly without resubmitting.
+- Backup runs can resume after a confirmed rejection by trying a different question. Accepted or manually covered days exit successfully. Reserved or pending attempts stop for review.
 - Out-of-window runs without a completed record fail instead of silently succeeding. The morning audit catches a day when no submission run started. Both use GitHub Actions failure emails; enable Email and Only notify for failed workflows in your GitHub notification settings. If GitHub never starts any job including the audit, GitHub alone cannot alert about its own total outage.
 - If a request times out, the reservation stays. A rerun cannot submit again. This intentionally favors avoiding duplicates over guaranteeing daily success.
-- Wrong answers, compilation errors, expired sessions, HTTP 403/429, and unknown responses do not cause resubmission. Investigate failures in Actions; refresh expired credentials directly in GitHub secrets.
+- Final wrong answers, compile errors, runtime errors, and resource-limit verdicts allow a different question. Expired sessions, HTTP failures, and unknown responses stop the run. Investigate failures in Actions; refresh expired credentials directly in GitHub secrets.
 - No catch-up batches. Missing a day leaves the queue unchanged. Each available day uses the next unseen problem, not a calendar-indexed problem.
 - Complete authenticated submission history and per-problem status are checked before selection. Historical bot reservations also exclude uncertain attempts. If history cannot be verified, no submission is sent.
 - The initial queue contains 90 prepared solutions. Append new unique easy/medium problems and tested C++ solutions to `roadmap.json` in the desired topic order; `day` is a sequential queue position. The next topic sequence is awaiting your instructions. Repeating a topic must use new problems.

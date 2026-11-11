@@ -29,13 +29,13 @@ class FakeLC:
     def __init__(self, allowed=True, crash=False, accepted=True):
         self.allowed, self.crash, self.accepted = allowed, crash, accepted
         self.submitted = 0
-    def next_problem(self, username, plan, now, used):
+    def next_problem(self, username, plan, now, used, rejected_ids=()):
         return next(p for p in plan if p['slug'] not in used), {'questionId': '206'}, self.allowed
     def submit_once(self, *args):
         self.submitted += 1
         if self.crash:
             raise runner.Stop('Network timeout after send')
-        return 123
+        return 122 + self.submitted
     def verdict(self, *args):
         return {'status_code': 10 if self.accepted else 11, 'status_msg': 'sample'}
 
@@ -73,6 +73,28 @@ class RunnerTests(unittest.TestCase):
         for _ in range(2):
             runner.run_live(self.config,self.plan,self.now,lc,self.ledger)
         self.assertEqual(lc.submitted,1)
+
+    def test_confirmed_rejection_uses_new_problem_and_stops_at_acceptance(self):
+        lc = FakeLC()
+        with patch.object(lc, 'verdict', side_effect=[
+            {'status_code': 11, 'status_msg': 'Wrong Answer'},
+            {'status_code': 10, 'status_msg': 'Accepted'},
+        ]):
+            runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
+            runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
+        record = self.ledger.records['2026-10-27.json']
+        self.assertEqual(lc.submitted, 2)
+        self.assertEqual(record['status'], 'accepted')
+        self.assertEqual(record['slug'], self.plan[1]['slug'])
+        self.assertEqual(record['rejected_attempts'][0]['slug'], self.plan[0]['slug'])
+
+    def test_rejected_attempt_cap_survives_later_runs(self):
+        lc = FakeLC()
+        with patch.object(lc, 'verdict', return_value={'status_code': 11, 'status_msg': 'Wrong Answer'}):
+            for _ in range(2):
+                with self.assertRaisesRegex(runner.Stop, 'daily attempts were rejected'):
+                    runner.run_live(self.config, self.plan, self.now, lc, self.ledger)
+        self.assertEqual(lc.submitted, runner.MAX_DAILY_ATTEMPTS)
 
     def test_ambiguous_submission_is_not_retried(self):
         lc = FakeLC(crash=True)

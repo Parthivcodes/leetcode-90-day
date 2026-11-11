@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Preview, authenticated check, or today's single submission
+        description: Preview, authenticated check, live practice, audit, or notification
         type: choice
         options: [preview, preflight, live, audit, notify]
         default: preview
@@ -63,4 +63,4 @@ jobs:
         run: |
           echo "::error::Daily LeetCode operation failed or was not confirmed. Inspect the Daily operation step. Never delete the daily record or retry an uncertain submission."
           echo "## LeetCode daily failure" >> "$GITHUB_STEP_SUMMARY"
-          echo "Inspect $RUN_URL. Refresh expired secrets if needed. Backup runs can retry checks before reservation, but never repeat a reserved submission." >> "$GITHUB_STEP_SUMMARY"
+          echo "Inspect $RUN_URL. Refresh expired secrets if needed. Backups can try another question after a confirmed rejection. An uncertain submission needs review." >> "$GITHUB_STEP_SUMMARY"
