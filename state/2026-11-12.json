@@ -1,0 +1,10 @@
+{
+  "date": "2026-11-12",
+  "at": "2026-11-12T10:53:50.957461+00:00",
+  "calendar_timezone": "UTC",
+  "status": "reserved",
+  "rejected_attempts": [],
+  "day": 20,
+  "slug": "delete-the-middle-node-of-a-linked-list",
+  "code_sha256": "3d017356667045cb704f591aadf8f726a5455a679ad9d595648a777fb3342420"
+}
