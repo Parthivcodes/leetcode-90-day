@@ -2,9 +2,10 @@
   "date": "2026-11-13",
   "at": "2026-11-13T10:49:50.040964+00:00",
   "calendar_timezone": "UTC",
-  "status": "reserved",
+  "status": "submitted",
   "rejected_attempts": [],
   "day": 24,
   "slug": "intersection-of-two-arrays",
-  "code_sha256": "10225a25fc13497fce88c88def7bcf05d510ddbd5a872cd84ef8b146b81e874c"
+  "code_sha256": "10225a25fc13497fce88c88def7bcf05d510ddbd5a872cd84ef8b146b81e874c",
+  "submission_id": 2195226577
 }
