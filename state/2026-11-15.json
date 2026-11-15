@@ -2,10 +2,14 @@
   "date": "2026-11-15",
   "at": "2026-11-15T10:41:34.627991+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "rejected_attempts": [],
   "day": 28,
   "slug": "word-pattern",
   "code_sha256": "16714a5473df1fc08d74c9ab8a7b9baafd42ed1432f47532b9d8d6aa001a26e9",
-  "submission_id": 2196562964
+  "submission_id": 2196562964,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
