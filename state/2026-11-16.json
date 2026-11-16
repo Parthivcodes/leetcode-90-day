@@ -2,10 +2,14 @@
   "date": "2026-11-16",
   "at": "2026-11-16T10:57:58.567077+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "rejected_attempts": [],
   "day": 29,
   "slug": "ransom-note",
   "code_sha256": "ff2a4d6509fca6cecf8d87f09af3642c54f17e703f428f87872ec86d7f5b6534",
-  "submission_id": 2197244987
+  "submission_id": 2197244987,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
