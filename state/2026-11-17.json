@@ -2,9 +2,10 @@
   "date": "2026-11-17",
   "at": "2026-11-17T11:41:04.975944+00:00",
   "calendar_timezone": "UTC",
-  "status": "reserved",
+  "status": "submitted",
   "rejected_attempts": [],
   "day": 30,
   "slug": "first-unique-character-in-a-string",
-  "code_sha256": "add58f50912d87a8feadd08c28e6c2d6b7bf01d62a58c340ea8a0c5ecdfba555"
+  "code_sha256": "add58f50912d87a8feadd08c28e6c2d6b7bf01d62a58c340ea8a0c5ecdfba555",
+  "submission_id": 2197962451
 }
