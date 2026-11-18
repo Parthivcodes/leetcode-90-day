@@ -2,10 +2,14 @@
   "date": "2026-11-18",
   "at": "2026-11-18T11:28:43.682138+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "rejected_attempts": [],
   "day": 31,
   "slug": "contains-duplicate-ii",
   "code_sha256": "9bf4083d7d2967c642f1c6e887185da438384eebca775e5304f5e919fed9a2be",
-  "submission_id": 2198650545
+  "submission_id": 2198650545,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
