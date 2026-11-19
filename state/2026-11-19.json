@@ -2,9 +2,10 @@
   "date": "2026-11-19",
   "at": "2026-11-19T11:27:19.096140+00:00",
   "calendar_timezone": "UTC",
-  "status": "reserved",
+  "status": "submitted",
   "rejected_attempts": [],
   "day": 32,
   "slug": "group-anagrams",
-  "code_sha256": "16d27213c265267f823c53690caaabf2d80eac8ad79224c2b2a5b2d9885c7ec5"
+  "code_sha256": "16d27213c265267f823c53690caaabf2d80eac8ad79224c2b2a5b2d9885c7ec5",
+  "submission_id": 2199302839
 }
