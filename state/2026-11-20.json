@@ -2,9 +2,10 @@
   "date": "2026-11-20",
   "at": "2026-11-20T11:20:36.101630+00:00",
   "calendar_timezone": "UTC",
-  "status": "reserved",
+  "status": "submitted",
   "rejected_attempts": [],
   "day": 33,
   "slug": "valid-sudoku",
-  "code_sha256": "4ff7cb98037b7a052c1f46aeebd4085e62e08874b629e09264266b3cc25f1cbe"
+  "code_sha256": "4ff7cb98037b7a052c1f46aeebd4085e62e08874b629e09264266b3cc25f1cbe",
+  "submission_id": 2199938032
 }
