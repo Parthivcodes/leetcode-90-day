@@ -2,10 +2,14 @@
   "date": "2026-11-23",
   "at": "2026-11-23T13:44:24.327347+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "rejected_attempts": [],
   "day": 40,
   "slug": "continuous-subarray-sum",
   "code_sha256": "5f55191cef83b773eeba7623b365df0faea9a8159fc58f32a89603f1947e0b76",
-  "submission_id": 2201947664
+  "submission_id": 2201947664,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
