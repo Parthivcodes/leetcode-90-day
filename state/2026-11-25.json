@@ -2,9 +2,10 @@
   "date": "2026-11-25",
   "at": "2026-11-25T12:35:45.492536+00:00",
   "calendar_timezone": "UTC",
-  "status": "reserved",
+  "status": "submitted",
   "rejected_attempts": [],
   "day": 49,
   "slug": "squares-of-a-sorted-array",
-  "code_sha256": "d3fb4a1853018068385406f859dfa58e2300b526b6de213fee8611ada4181627"
+  "code_sha256": "d3fb4a1853018068385406f859dfa58e2300b526b6de213fee8611ada4181627",
+  "submission_id": 2203213839
 }
