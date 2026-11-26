@@ -2,10 +2,14 @@
   "date": "2026-11-26",
   "at": "2026-11-26T12:14:21.784809+00:00",
   "calendar_timezone": "UTC",
-  "status": "submitted",
+  "status": "accepted",
   "rejected_attempts": [],
   "day": 53,
   "slug": "product-of-array-except-self",
   "code_sha256": "5064409ebb63071c87122be5d67584ab22aa74a58382f18f823e1fd18b6f31f2",
-  "submission_id": 2203879091
+  "submission_id": 2203879091,
+  "verdict": {
+    "status_code": 10,
+    "status_msg": "Accepted"
+  }
 }
